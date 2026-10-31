@@ -13,7 +13,7 @@ Público-alvo: estudantes, iniciantes e desenvolvedores que desejam automatizar 
 
 O repositório existente utiliza **Python + CustomTkinter**, com organização básica em `ui/` e `core/`. Há um fluxo para gerar projeto **Expo / blank**, verificar Node.js/npm e apresentar logs e progresso. O código utiliza `subprocess` e `threading`. A opção React Native CLI aparece na lógica, mas não constitui ainda uma experiência de seleção implementada na interface. O resultado da execução e a atualização segura da interface ainda precisam de aprimoramento.
 
-A adoção de **PySide6**, o uso de **QProcess** e a expansão para React web são **propostas futuras**, não tecnologias já presentes.
+A arquitetura-alvo **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi **aprovada** no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). A migração ainda **não foi implementada**: o código existente continua usando CustomTkinter, `subprocess` e `threading`. A estrutura e os contratos técnicos estão definidos em [ARQUITETURA.md](./ARQUITETURA.md).
 
 ## 3. Requisitos funcionais
 
@@ -52,7 +52,7 @@ A adoção de **PySide6**, o uso de **QProcess** e a expansão para React web s�
 
 | ID | Requisito |
 | --- | --- |
-| RNF-01 | A interface não deve travar durante instalações ou buscas; operações longas devem executar fora do fluxo da UI. |
+| RNF-01 | A interface PySide6 não deve travar durante instalações ou buscas; QProcess será usado para comandos e workers Qt para HTTP. |
 | RNF-02 | Estados de progresso devem ser fiéis: usar etapas/indeterminação quando a duração não puder ser medida. |
 | RNF-03 | Processos devem ter timeout quando apropriado, captura de erros, logs e cancelamento seguro. |
 | RNF-04 | Não interpolar entradas do usuário em comandos shell; validar nomes e caminhos e respeitar permissões locais. |
@@ -61,11 +61,11 @@ A adoção de **PySide6**, o uso de **QProcess** e a expansão para React web s�
 | RNF-07 | O MVP será testado prioritariamente no Windows; suporte multiplataforma exige validação específica. |
 | RNF-08 | O executável desktop poderá ser distribuído com PyInstaller sem exigir Python instalado; **Node.js e npm** continuam como pré-requisitos para gerar projetos. |
 | RNF-09 | Interface legível, com feedback claro, textos acessíveis e navegação por teclado quando viável. |
-| RNF-10 | Implementar testes de regras de criação, validação, interpretação de APIs e estados de execução. |
+| RNF-10 | Implementar testes com pytest e pytest-qt para regras de criação, validação, APIs, sinais da interface e estados de execução. |
 
 ## 6. Roadmap de entrega (proposta)
 
-**Fase 1 — Núcleo confiável:** corrigir detecção de ambiente, segurança de execução, tratamento de códigos de saída, logs e sincronização com UI; abstrair geradores; incluir Vite e seleção JS/TS/templates oficiais.
+**Fase 1 — Migração e núcleo confiável:** substituir a interface CustomTkinter por PySide6/Qt Widgets/QSS; executar processos por QProcess; corrigir detecção de ambiente, segurança da execução, códigos de saída, logs e cancelamento; abstrair geradores; incluir Vite e seleção JS/TS/templates oficiais.
 
 **Fase 2 — Catálogo e configuração:** consumir npm Registry, React Native Directory, instalar bibliotecas selecionadas, cache e filtragem de compatibilidade.
 
@@ -82,9 +82,9 @@ A adoção de **PySide6**, o uso de **QProcess** e a expansão para React web s�
 
 ## 8. Pendências de decisão
 
-- Manter CustomTkinter inicialmente ou migrar a GUI para PySide6 em uma etapa separada.
+- A escolha **PySide6** está encerrada; implementar a migração em uma etapa própria, preservando o comportamento funcional existente.
 - Nome final do produto após incluir React web.
 - Quais bibliotecas/templates entrarão no catálogo curado inicial.
 - Estratégia de distribuição/atualização do executável.
 
-Ver também [API.md](./API.md) e [ADR-0001](./ADR/0001-arquitetura-e-geradores.md).
+Ver também [ARQUITETURA.md](./ARQUITETURA.md), [API.md](./API.md) e [ADR-0001](./ADR/0001-arquitetura-e-geradores.md).

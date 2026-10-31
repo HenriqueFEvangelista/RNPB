@@ -7,8 +7,9 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 ## Índice
 
 - [Requisitos](./REQUISITOS.md) — escopo, requisitos funcionais e não funcionais, critérios de aceitação e roadmap.
+- [Arquitetura técnica](./ARQUITETURA.md) — módulos, contratos, fluxos, estados e plano de migração.
 - [Documentação de APIs e integrações](./API.md) — npm Registry, React Native Directory, GitHub e ferramentas locais.
-- [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão arquitetural proposta, contexto e consequências.
+- [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão **aceita**, contexto, alternativas e consequências.
 
 ## Estado do repositório na criação destes documentos
 
@@ -24,7 +25,7 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - Catálogo de bibliotecas, filtros de compatibilidade e instalação pela interface.
 - Integração com npm Registry, React Native Directory e GitHub.
 - Execução do Expo Go nos modos LAN/Tunnel; melhorias de cancelamento, tratamento de erros e gerenciamento de projetos.
-- Possível migração da interface para **PySide6**, com `QProcess` no lugar da implementação atual.
+- Migração **aprovada** da interface para **PySide6 + Qt Widgets/QSS**, com `QProcess` no lugar da execução atual; a migração **ainda não foi codificada**.
 
 A presença de um requisito ou de uma integração nestes arquivos **não indica que a funcionalidade já esteja disponível**.
 
@@ -36,4 +37,4 @@ A presença de um requisito ou de uma integração nestes arquivos **não indica
 4. Evitar segredos embutidos no executável e tratar templates/pacotes externos como fontes não confiáveis.
 5. Separar interface, regras de negócio, integrações externas e execução de processos para facilitar manutenção.
 
-A implementação deverá ser acompanhada de atualizações nesta documentação, conforme as decisões forem aprovadas e os recursos entregues.
+A arquitetura-base foi aprovada em 31/10/2026. A implementação deverá ser acompanhada de atualizações nesta documentação conforme os recursos forem entregues.

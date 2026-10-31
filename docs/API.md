@@ -143,7 +143,7 @@ Não se trata de uma API pública do RNPB, e sim de um modelo interno inicial, s
 - Revalidar a compatibilidade e os comandos na versão atual de Vite/Expo antes de apresentá-los como disponíveis.
 - Validar identificadores de pacotes, nomes de projeto, caminhos e origens. Evitar execução automática de scripts/repositórios desconhecidos.
 - Comandos do sistema devem usar **lista de argumentos**, sem concatenação de strings fornecidas pelo usuário em um shell.
-- Operações HTTP e de CLI não podem bloquear a interface gráfica; a arquitetura de execução depende da decisão de GUI no ADR.
+- Operações HTTP e de CLI não podem bloquear a interface gráfica: a arquitetura aprovada é **PySide6**, com **QProcess** para CLI e **workers Qt** para HTTP, conforme [ADR-0001](./ADR/0001-arquitetura-e-geradores.md) e [ARQUITETURA.md](./ARQUITETURA.md). A implementação permanece pendente.
 
 ## 8. Referências
 

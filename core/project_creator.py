@@ -31,7 +31,7 @@ def validar_projeto(nome: str, pasta: str) -> Path:
         )
     if not pasta.strip():
         raise ValueError("Escolha uma pasta de destino.")
-    raiz = Path(pasta).expanduser()
+    raiz = Path(pasta).expanduser().resolve()
     if not raiz.is_dir():
         raise ValueError("A pasta de destino não existe ou não é um diretório.")
     destino = raiz / nome
@@ -55,6 +55,6 @@ def montar_comando_expo(nome: str, pasta: str, tools: EnvironmentTools) -> Comma
         )
         for cli in candidates:
             if cli.is_file():
-                return CommandPlan(tools.node, (str(cli), *arguments), str(Path(pasta).resolve()))
+                return CommandPlan(tools.node, (str(cli), *arguments), str(Path(pasta).expanduser().resolve()))
 
-    return CommandPlan(tools.npx, arguments, str(Path(pasta).resolve()))
+    return CommandPlan(tools.npx, arguments, str(Path(pasta).expanduser().resolve()))

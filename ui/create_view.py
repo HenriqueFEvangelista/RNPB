@@ -1,101 +1,119 @@
-import customtkinter as ctk
-from tkinter import filedialog
-import threading
+"""Formulário Expo da primeira etapa da migração para PySide6."""
 
-from core.environment import verificar_ambiente
-from core.project_creator import criar_projeto
+from pathlib import Path
+
+from PySide6.QtCore import Signal
+from PySide6.QtWidgets import (
+    QComboBox,
+    QFileDialog,
+    QFormLayout,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QProgressBar,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 
-class CreateView(ctk.CTkFrame):
-    def __init__(self, parent, logs_view):
+class CreateView(QWidget):
+    create_requested = Signal(str, str)
+    cancel_requested = Signal()
+
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
 
-        self.logs_view = logs_view
+        layout = QVBoxLayout(self)
+        layout.setSpacing(16)
+        title = QLabel("Novo projeto")
+        title.setObjectName("pageTitle")
+        subtitle = QLabel("Criação React Native com Expo • primeira etapa da migração")
+        subtitle.setObjectName("muted")
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
 
-        titulo = ctk.CTkLabel(
-            self,
-            text="Create React Native Project",
-            font=("Arial", 20, "bold")
+        form = QFormLayout()
+        form.setSpacing(12)
+
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("meu-projeto")
+        self.name_input.setObjectName("projectName")
+        form.addRow("Nome do projeto", self.name_input)
+
+        platform = QComboBox()
+        platform.addItem("React Native · Expo")
+        platform.setEnabled(False)
+        form.addRow("Plataforma", platform)
+
+        language = QComboBox()
+        language.addItem("JavaScript")
+        language.setEnabled(False)
+        form.addRow("Linguagem", language)
+
+        template = QComboBox()
+        template.addItem("Blank")
+        template.setEnabled(False)
+        form.addRow("Template", template)
+
+        directory_row = QHBoxLayout()
+        self.directory_input = QLineEdit()
+        self.directory_input.setPlaceholderText("Selecione uma pasta para criar o projeto")
+        self.directory_input.setObjectName("projectDirectory")
+        self.browse_button = QPushButton("Procurar…")
+        self.browse_button.clicked.connect(self.choose_directory)
+        directory_row.addWidget(self.directory_input)
+        directory_row.addWidget(self.browse_button)
+        form.addRow("Destino", directory_row)
+        layout.addLayout(form)
+
+        hint = QLabel("React Web, TypeScript e bibliotecas chegarão nas próximas etapas.")
+        hint.setObjectName("muted")
+        layout.addWidget(hint)
+
+        controls = QHBoxLayout()
+        self.create_button = QPushButton("Criar projeto")
+        self.create_button.setObjectName("primaryButton")
+        self.cancel_button = QPushButton("Cancelar execução")
+        self.cancel_button.setEnabled(False)
+        self.create_button.clicked.connect(self._request_creation)
+        self.cancel_button.clicked.connect(self.cancel_requested.emit)
+        controls.addWidget(self.create_button)
+        controls.addWidget(self.cancel_button)
+        controls.addStretch()
+        layout.addLayout(controls)
+
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.status_label = QLabel("Aguardando configuração.")
+        self.status_label.setWordWrap(True)
+        layout.addWidget(self.progress)
+        layout.addWidget(self.status_label)
+        layout.addStretch()
+
+    def choose_directory(self) -> None:
+        directory = QFileDialog.getExistingDirectory(
+            self, "Selecione a pasta de destino", self.directory_input.text() or str(Path.home())
         )
-        titulo.pack(pady=20)
+        if directory:
+            self.directory_input.setText(directory)
 
-        self.entry_nome = ctk.CTkEntry(self, width=350, placeholder_text="Nome do projeto")
-        self.entry_nome.pack(pady=10)
+    def _request_creation(self) -> None:
+        self.create_requested.emit(self.name_input.text(), self.directory_input.text())
 
-        self.opcao_tipo = ctk.CTkOptionMenu(
-            self, values= ["Expo", "React Native CLI"]
-        )
-        self.opcao_tipo.set("Expo")
+    def set_running(self, running: bool) -> None:
+        self.create_button.setEnabled(not running)
+        self.cancel_button.setEnabled(running)
+        self.browse_button.setEnabled(not running)
+        self.name_input.setEnabled(not running)
+        self.directory_input.setEnabled(not running)
+        if running:
+            self.progress.setRange(0, 0)
+            self.status_label.setText("Criando o projeto; acompanhe os logs.")
+        else:
+            self.progress.setRange(0, 100)
 
-        self.pasta_label = ctk.CTkLabel(self, text="Nenhuma pasta selecionada")
-        self.pasta_label.pack(pady=5)
-
-        btn_pasta = ctk.CTkButton(self, text="Escolher pasta", command=self.escolher_pasta)
-        btn_pasta.pack(pady=10)
-
-        self.btn_criar = ctk.CTkButton(
-            self,
-            text="Criar Projeto",
-            width=220,
-            height=40,
-            command=self.iniciar_criacao
-        )
-        self.btn_criar.pack(pady=30)
-
-        self.progress = ctk.CTkProgressBar(self)
-        self.progress.pack(pady=10)
-        self.progress.set(0)
-
-        self.status_label = ctk.CTkLabel(self, text="Aguardando...")
-        self.status_label.pack(pady=5)
-
-    def escolher_pasta(self):
-        pasta = filedialog.askdirectory()
-        self.pasta_label.configure(text=pasta)
-
-    
-    def iniciar_criacao(self):
-        nome = self.entry_nome.get()
-        tipo = self.opcao_tipo.get()
-        pasta = self.pasta_label.cget("text")
-
-        if not nome or pasta == "Nenhuma pasta selecionada":
-            self.logs_view.add_log("Erro: configure o projeto primeiro.")
-            return
-
-        ok, mensagem = verificar_ambiente()
-
-        self.logs_view.add_log(mensagem)
-
-        if not ok:
-            self.logs_view.add_log("Erro de ambiente.")
-            return
-
-        self.atualizar_progresso(0.1, "Verificando ambiente...")
-        self.atualizar_progresso(0.25, "Ambiente OK")
-        self.logs_view.add_log("Iniciando criação do projeto...")
-
-        threading.Thread(
-            target=self.executar_processo,
-            args=(nome, tipo, pasta),
-            daemon=True
-        ).start()
-
-    def executar_processo(self, nome, tipo, pasta):
-        self.atualizar_progresso(0.4, "Criando projeto...")
-
-        criar_projeto(nome, tipo, pasta, self.logs_view.add_log)
-
-        self.atualizar_progresso(0.9, "Finalizando...")
-
-        self.progress.set(1)
-        self.status_label.configure(text="Projeto criado com sucesso!")
-        self.logs_view.add_log("Finalizado.")
-
-        self.progress.stop()
-        self.status_label.configure(text="Projeto criado com sucesso!")
-        self.logs_view.add_log("Finalizado.")
-
-    def atualizar_progresso(self, valor, texto):
-        self.progress.set(valor)
-        self.status_label.configure(text=texto)
+    def show_result(self, text: str, success: bool = False) -> None:
+        self.status_label.setText(text)
+        self.progress.setValue(100 if success else 0)

@@ -186,6 +186,9 @@ class CreateView(QWidget):
             steps += "Instalar bibliotecas selecionadas"
         else:
             steps += "Concluir"
+        command = f"{installer} {' '.join(names)}" if names else "(nenhuma)"
+        if names and target == REACT_NATIVE:
+            command += " --npm"
         self.review_summary.setText(
             f"Projeto: {self.name_input.text()}\n"
             f"Destino: {self.directory_input.text()}\n"
@@ -193,8 +196,7 @@ class CreateView(QWidget):
             f"Linguagem: {self.language_combo.currentText()}\n"
             f"Template: {self.template_combo.currentData()}\n\n"
             f"Bibliotecas: {description}\n"
-            f"Instalação opcional: {installer} {' '.join(names) if names else '(nenhuma)'}" +
-            (" --npm" if target == REACT_NATIVE and names else "") + "\n"
+            f"Instalação opcional: {command}\n"
             f"Compatibilidade Expo Go: {compat}\n\n"
             f"Fluxo: {steps}"
         )

@@ -1,21 +1,24 @@
-import customtkinter as ctk
+"""Painel de logs baseado em Qt Widgets."""
 
-class LogsView(ctk.CTkFrame):
-    def __init__(self, parent):
+from PySide6.QtWidgets import QLabel, QPlainTextEdit, QVBoxLayout, QWidget
+
+
+class LogsView(QWidget):
+    def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
+        layout = QVBoxLayout(self)
+        title = QLabel("Logs do sistema")
+        title.setObjectName("pageTitle")
+        self.log_box = QPlainTextEdit()
+        self.log_box.setReadOnly(True)
+        self.log_box.setMaximumBlockCount(5000)
+        layout.addWidget(title)
+        layout.addWidget(self.log_box)
+        self.add_log("RNPB iniciado.\n")
 
-        titulo = ctk.CTkLabel(
-            self,
-            text="Logs do Sistema",
-            font=("Arial", 20, "bold")
-        )
-        titulo.pack(pady=20)
-
-        self.log_box = ctk.CTkTextbox(self, width=600, height=300)
-        self.log_box.pack(pady=10)
-
-        self.log_box.insert("end", "RNPB iniciado...\n")
-
-    def add_log(self, text):
-        self.log_box.insert("end", text + "\n")
-        self.log_box.see("end")
+    def add_log(self, text: str) -> None:
+        cursor = self.log_box.textCursor()
+        cursor.movePosition(cursor.MoveOperation.End)
+        cursor.insertText(text)
+        self.log_box.setTextCursor(cursor)
+        self.log_box.ensureCursorVisible()

@@ -1,26 +1,56 @@
 # RNPB — React Native Project Builder
 
-**RNPB (React Native Project Builder)** é uma ferramenta com interface gráfica que automatiza a criação de projetos **React Native**, facilitando o setup inicial para desenvolvedores.
+O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar e preparar projetos React e React Native por uma interface gráfica, evitando a digitação repetitiva de comandos no terminal.
 
-Em vez de executar vários comandos no terminal, o usuário pode simplesmente configurar o projeto pela interface — escolhendo o nome e a pasta onde ele será criado — enquanto o RNPB executa todo o processo automaticamente em segundo plano.
+> 🚧 **Em desenvolvimento.** Esta branch contém a **primeira etapa da migração** de CustomTkinter para PySide6. Atualmente a interface cria apenas projetos **React Native com Expo**, template **blank (JavaScript)**. React web, TypeScript, bibliotecas e Expo Tunnel estão planejados, **não implementados**.
 
-Atualmente, o RNPB cria projetos usando **Expo por padrão**, utilizando o comando:
+## Recursos da primeira etapa
 
-`npx create-expo-app@latest --template blank`
+- Qt Widgets + QSS, navegação para criação e logs.
+- Verificação local de Node.js/npm/npx.
+- Nome/diretório validados, sem sobrescrever projeto existente.
+- Criação Expo `blank` com `npx create-expo-app@latest`.
+- Saída do processo em tempo real, sem bloquear a interface, usando `QProcess`.
+- Cancelamento de execução, progresso indeterminado e feedback por código de saída.
+- O sucesso é conferido também pela existência de `package.json` no destino.
 
-### Principais recursos
+## Executar no Windows
 
-* Interface gráfica simples e rápida
-* Criação automática de projetos React Native
-* Expo configurado como padrão
-* Logs em tempo real do processo de criação
-* Barra de progresso durante a execução
-* Verificação automática do ambiente (Node, npm, npx)
+Tenha **Python** e **Node.js** instalados (incluindo npm e npx), e disponíveis no PATH.
 
-### Objetivo do projeto
+~~~powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python main.py
+~~~
 
-O objetivo do RNPB é tornar o processo de iniciar projetos React Native **mais simples, visual e acessível**, principalmente para iniciantes ou para quem cria muitos projetos durante o desenvolvimento.
+Para executar os testes:
 
----
+~~~powershell
+python -m pip install -r requirements-dev.txt
+python -m pytest -q
+~~~
 
-Projeto em desenvolvimento 🚧
+Para distribuir um executável Windows, instale os requisitos de desenvolvimento e depois execute:
+
+~~~powershell
+pyinstaller RNPB.spec
+~~~
+
+O empacotamento não instala Node.js/npm no computador do usuário.
+
+## Avisos
+
+- A criação pelo npm/Expo normalmente requer conexão com a internet.
+- Cancelar um processo pode deixar arquivos parcialmente criados; **o RNPB não os apaga automaticamente**.
+- A interrupção de processos filhos iniciados pelos geradores pode variar por sistema operacional e requer testes adicionais em Windows.
+- A pesquisa de bibliotecas e os demais templates ainda não foram implementados.
+
+## Documentação
+
+- [Documentação inicial](docs/README.md)
+- [Arquitetura planejada](docs/ARQUITETURA.md)
+- [Requisitos](docs/REQUISITOS.md)
+- [ADR-0001](docs/ADR/0001-arquitetura-e-geradores.md)
+- [APIs e integrações](docs/API.md)

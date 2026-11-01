@@ -1,35 +1,27 @@
-import subprocess
+"""Detecção de dependências locais para os geradores do RNPB."""
+
+from dataclasses import dataclass
 import shutil
 
-def verificar_node():
-    try:
-        subprocess.run(["node", "-v"], capture_output=True, check=True)
-        return True
-    except:
-        return False
+
+@dataclass(frozen=True)
+class EnvironmentTools:
+    node: str
+    npm: str
+    npx: str
 
 
-def verificar_npm():
-    try:
-        subprocess.run(["npm", "-v"], capture_output=True, check=True)
-        return True
-    except:
-        return False
+def verificar_ambiente() -> tuple[bool, str, EnvironmentTools | None]:
+    """Valida somente a presença dos comandos; a execução valida erros reais."""
+    node = shutil.which("node")
+    npm = shutil.which("npm") or shutil.which("npm.cmd")
+    npx = shutil.which("npx") or shutil.which("npx.cmd")
 
-
-def verificar_npx():
-    try:
-        subprocess.run(["npx", "-v"], capture_output=True, check=True)
-        return True
-    except:
-        return False
-
-
-def verificar_ambiente():
-    if shutil.which("node") is None:
-        return False, "Node.js não encontrado."
-
-    if shutil.which("npm") is None:
-        return False, "npm não encontrado."
-
-    return True, "Ambiente OK"
+    missing = [
+        name
+        for name, executable in (("Node.js", node), ("npm", npm), ("npx", npx))
+        if not executable
+    ]
+    if missing:
+        return False, f"Ferramentas não encontradas: {', '.join(missing)}. Instale o Node.js e confira o PATH.", None
+    return True, "Ambiente OK: Node.js, npm e npx encontrados.", EnvironmentTools(node, npm, npx)

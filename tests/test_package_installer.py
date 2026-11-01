@@ -44,7 +44,6 @@ def test_rejeita_injecao_e_projeto_inexistente(tmp_path, tools):
     spec = ProjectSpec("app", str(tmp_path), REACT_WEB, JAVASCRIPT, "react")
     with pytest.raises(ValueError, match="package.json"):
         montar_instalacao_bibliotecas(spec, ["axios"], tools)
-    project(tmp_path.parent / "irrelevant") if False else None
     (tmp_path / "app").mkdir()
     (tmp_path / "app" / "package.json").write_text("{}", encoding="utf8")
     with pytest.raises(ValueError, match="inválido"):

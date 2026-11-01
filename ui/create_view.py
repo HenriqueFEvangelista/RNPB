@@ -176,6 +176,11 @@ class CreateView(QWidget):
         names = self.package_selector.selected_names
         installer = "npx expo install" if target == REACT_NATIVE else "npm install"
         description = ", ".join(names) if names else "Nenhuma biblioteca adicional"
+        compat = (
+            " | ".join(f"{p.name}: {p.compatibility_label}"
+                     for p in self.package_selector.selected_packages)
+            if target == REACT_NATIVE and names else "Não aplicável"
+        )
         steps = "Gerar projeto → " + ("Instalar dependências base → " if target == REACT_WEB else "")
         if names:
             steps += "Instalar bibliotecas selecionadas"
@@ -188,7 +193,9 @@ class CreateView(QWidget):
             f"Linguagem: {self.language_combo.currentText()}\n"
             f"Template: {self.template_combo.currentData()}\n\n"
             f"Bibliotecas: {description}\n"
-            f"Instalação opcional: {installer} {' '.join(names) if names else '(nenhuma)'}\n\n"
+            f"Instalação opcional: {installer} {' '.join(names) if names else '(nenhuma)'}" +
+            (" --npm" if target == REACT_NATIVE and names else "") + "\n"
+            f"Compatibilidade Expo Go: {compat}\n\n"
             f"Fluxo: {steps}"
         )
 

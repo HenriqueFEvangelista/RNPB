@@ -34,3 +34,25 @@ jobs:
         run: python -m pip install -r requirements-dev.txt
       - name: Tests
         run: python -m pytest -q
+
+  scaffold-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Create React TS with Vite
+        run: |
+          npx --yes create-vite@latest vite-smoke --template react-ts --no-interactive
+          test -f vite-smoke/package.json
+          cd vite-smoke
+          npm install --no-audit --no-fund
+          test -d node_modules
+          npm run build
+      - name: Create React Native TS scaffold with Expo
+        run: |
+          npx --yes create-expo-app@latest expo-smoke --template blank-typescript --yes --no-install
+          test -f expo-smoke/package.json
+          test -f expo-smoke/tsconfig.json

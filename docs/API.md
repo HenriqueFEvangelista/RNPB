@@ -1,7 +1,7 @@
 # APIs e integrações do RNPB
 
 **Versão:** proposta inicial — 31/10/2026  
-**Status:** integrações planejadas, **não implementadas** no repositório atual.
+**Status:** npm Registry e React Native Directory **implementados no PR #9**, ainda em revisão. GitHub REST API permanece planejada.
 
 Esta documentação descreve fontes externas para descobrir bibliotecas e templates e distingue **APIs HTTP** de **ferramentas de linha de comando**. O RNPB é uma aplicação desktop; não está prevista uma API HTTP própria para o MVP.
 
@@ -15,6 +15,16 @@ Esta documentação descreve fontes externas para descobrir bibliotecas e templa
 | [Vite](https://vite.dev/guide/) | Gerar projetos React web | Não aplicável | Comando local via npm |
 | [Expo](https://docs.expo.dev/more/create-expo/) | Gerar e executar projetos React Native | Não aplicável à geração local | Comando local via npx |
 | [Expo Tunnel](https://docs.expo.dev/get-started/start-developing/) | Conectar Expo Go ao servidor em redes diferentes | Pode depender do serviço de túnel | Ferramenta opcional, não API REST |
+
+## 1.1 Implementação em código (PR #9)
+
+- `core/package_catalog.py` consulta o npm Registry e React Native Directory via `requests`, com timeout e fallback parcial.
+- `core/packages.py` normaliza nome, versão, descrição, categoria e indicadores de compatibilidade.
+- `ui/catalog_worker.py` executa consultas HTTP por `QRunnable` e sinais Qt; o formulário usa debounce de **450 ms** e descarta resultados obsoletos.
+- O cache atual dura **600 segundos e é somente em memória**. Não há ainda persistência nem paginação de resultados.
+- O React Native Directory fornece indicadores `expoGo`, `android`, `ios` e `web`, mas só o filtro **Somente Expo Go** está disponível no formulário nesta etapa.
+- Pacotes retornados somente pelo npm no contexto React Native possuem compatibilidade **desconhecida**; o sistema não supõe compatibilidade positiva.
+- A instalação opcional ocorre depois da geração e dependências-base do Vite, via `core/package_installer.py`, usando comandos Qt sem interpolar shell.
 
 ## 2. npm Registry — pesquisa de bibliotecas
 
@@ -43,7 +53,7 @@ GET https://registry.npmjs.org/axios
 **Exemplo de consulta:**
 
 ~~~http
-GET https://reactnative.directory/api/libraries?search=image&expoGo=true
+GET https://reactnative.directory/api/libraries?search=image&limit=20&skipTools=true
 ~~~
 
 **Objetivo:** complementar os resultados do npm com filtros/indicadores de plataformas (como Android, iOS e web) e compatibilidade informada com Expo Go, conforme os campos retornados pela API.
@@ -143,7 +153,7 @@ Não se trata de uma API pública do RNPB, e sim de um modelo interno inicial, s
 - Revalidar a compatibilidade e os comandos na versão atual de Vite/Expo antes de apresentá-los como disponíveis.
 - Validar identificadores de pacotes, nomes de projeto, caminhos e origens. Evitar execução automática de scripts/repositórios desconhecidos.
 - Comandos do sistema devem usar **lista de argumentos**, sem concatenação de strings fornecidas pelo usuário em um shell.
-- Operações HTTP e de CLI não podem bloquear a interface gráfica: a arquitetura aprovada é **PySide6**, com **QProcess** para CLI e **workers Qt** para HTTP, conforme [ADR-0001](./ADR/0001-arquitetura-e-geradores.md) e [ARQUITETURA.md](./ARQUITETURA.md). A implementação permanece pendente.
+- Operações HTTP e de CLI não podem bloquear a interface gráfica: a arquitetura aprovada é **PySide6**, com **QProcess** para CLI e **workers Qt** para HTTP, conforme [ADR-0001](./ADR/0001-arquitetura-e-geradores.md) e [ARQUITETURA.md](./ARQUITETURA.md). O fluxo Qt/QProcess e os workers HTTP estão implementados no PR #9; recursos extras e cache persistente permanecem pendentes.
 
 ## 8. Referências
 

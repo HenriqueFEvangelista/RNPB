@@ -2,7 +2,7 @@
 
 O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar projetos **React Web (Vite)** e **React Native (Expo)** por uma interface gráfica.
 
-> 🚧 **Em desenvolvimento.** Nesta etapa, já é possível selecionar plataforma, JavaScript/TypeScript e templates oficiais. Pesquisa e instalação de bibliotecas opcionais, Expo Tunnel e gerenciamento de projetos existentes ficam para etapas futuras.
+> 🚧 **Em desenvolvimento.** O PR #9 acrescenta um assistente com quatro etapas e seleção opcional de bibliotecas durante a criação. O gerenciamento de pacotes em projetos existentes, Expo Tunnel e atualização/remoção de bibliotecas permanecem para entregas futuras.
 
 ## Recursos disponíveis
 
@@ -18,6 +18,17 @@ O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar projetos 
 - Validação de nome/diretório sem sobrescrever projeto, detecção de Node.js/npm/npx.
 - Processos assíncronos com `QProcess`, logs em tempo real, cancelamento e tratamento de falhas.
 - O sucesso depende do código de saída e da presença de `package.json`; para Vite, valida a instalação de `node_modules`.
+
+## Bibliotecas durante a criação (PR #9)
+
+O assistente apresenta **Projeto → Template → Bibliotecas → Revisão**. Na etapa de bibliotecas o usuário pode não selecionar nada, escolher sugestões locais ou pesquisar pacotes online, filtrando por categoria e, no React Native, pelo indicador de compatibilidade com Expo Go.
+
+- Para **React Web**, a busca consulta o **npm Registry** e a instalação adicional usa `npm install nome-do-pacote`.
+- Para **React Native**, a busca consulta **npm Registry e React Native Directory** e a instalação adicional usa `npx expo install nome-do-pacote --npm`, respeitando as versões compatíveis conhecidas pelo Expo CLI.
+- Dados de compatibilidade Expo Go aparecem como **compatível**, **incompatível** ou **não verificado**. Pacotes que aparecem apenas no npm não são automaticamente considerados compatíveis.
+- Consultas HTTP usam workers Qt, timeout e cache **em memória por 10 minutos**. Falhas parciais ou totais são comunicadas; sugestões locais continuam acessíveis.
+- O projeto é criado primeiro, depois as dependências-base (Vite) e, por último, as bibliotecas escolhidas. Uma falha na última etapa informa **projeto criado, configuração incompleta**, sem excluir os arquivos.
+- O RNPB valida identificadores npm, impede flags/URLs no campo de instalação e permite até **30 pacotes** por criação. Pacotes de terceiros podem executar scripts de instalação e não são auditados automaticamente.
 
 ## Executar no Windows
 

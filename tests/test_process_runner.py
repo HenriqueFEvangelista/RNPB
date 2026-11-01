@@ -48,3 +48,24 @@ def test_qprocess_cancelamento(qtbot, tmp_path):
     with qtbot.waitSignal(runner.completed, timeout=10000):
         runner.cancel()
     assert results[0][0] == "cancelled"
+
+
+
+def test_qprocess_reutilizado_para_geracao_e_instalacao(qtbot, tmp_path):
+    """O segundo processo inicia a partir do sinal de término do primeiro."""
+    runner = ProcessRunner()
+    results = []
+
+    def on_completed(status, code):
+        results.append((status, code))
+        if len(results) == 1:
+            assert runner.run(CommandPlan(
+                sys.executable, ("-c", "print('install')"), str(tmp_path)
+            ))
+
+    runner.completed.connect(on_completed)
+    assert runner.run(CommandPlan(
+        sys.executable, ("-c", "print('generate')"), str(tmp_path)
+    ))
+    qtbot.waitUntil(lambda: len(results) == 2, timeout=10000)
+    assert results == [("success", 0), ("success", 0)]

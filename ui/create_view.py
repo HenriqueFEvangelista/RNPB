@@ -1,4 +1,4 @@
-"""Formulário Expo da primeira etapa da migração para PySide6."""
+"""Formulário de criação React Web (Vite) ou React Native (Expo)."""
 
 from pathlib import Path
 
@@ -16,9 +16,13 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core.templates import (
+    JAVASCRIPT, TYPESCRIPT, REACT_NATIVE, REACT_WEB, opcoes_templates,
+)
+
 
 class CreateView(QWidget):
-    create_requested = Signal(str, str)
+    create_requested = Signal(str, str, str, str, str)
     cancel_requested = Signal()
 
     def __init__(self, parent: QWidget | None = None):
@@ -28,7 +32,7 @@ class CreateView(QWidget):
         layout.setSpacing(16)
         title = QLabel("Novo projeto")
         title.setObjectName("pageTitle")
-        subtitle = QLabel("Criação React Native com Expo • primeira etapa da migração")
+        subtitle = QLabel("Configure React Web com Vite ou React Native com Expo.")
         subtitle.setObjectName("muted")
         layout.addWidget(title)
         layout.addWidget(subtitle)
@@ -41,20 +45,18 @@ class CreateView(QWidget):
         self.name_input.setObjectName("projectName")
         form.addRow("Nome do projeto", self.name_input)
 
-        platform = QComboBox()
-        platform.addItem("React Native · Expo")
-        platform.setEnabled(False)
-        form.addRow("Plataforma", platform)
+        self.platform_combo = QComboBox()
+        self.platform_combo.addItem("React Native · Expo", REACT_NATIVE)
+        self.platform_combo.addItem("React Web · Vite", REACT_WEB)
+        form.addRow("Plataforma", self.platform_combo)
 
-        language = QComboBox()
-        language.addItem("JavaScript")
-        language.setEnabled(False)
-        form.addRow("Linguagem", language)
+        self.language_combo = QComboBox()
+        self.language_combo.addItem("JavaScript", JAVASCRIPT)
+        self.language_combo.addItem("TypeScript", TYPESCRIPT)
+        form.addRow("Linguagem", self.language_combo)
 
-        template = QComboBox()
-        template.addItem("Blank")
-        template.setEnabled(False)
-        form.addRow("Template", template)
+        self.template_combo = QComboBox()
+        form.addRow("Template", self.template_combo)
 
         directory_row = QHBoxLayout()
         self.directory_input = QLineEdit()
@@ -67,7 +69,12 @@ class CreateView(QWidget):
         form.addRow("Destino", directory_row)
         layout.addLayout(form)
 
-        hint = QLabel("React Web, TypeScript e bibliotecas chegarão nas próximas etapas.")
+        self.platform_combo.currentIndexChanged.connect(self._refresh_templates)
+        self.language_combo.currentIndexChanged.connect(self._refresh_templates)
+        self._refresh_templates()
+
+        hint = QLabel("Os projetos Vite recebem npm install após a criação. Bibliotecas extras chegarão depois.")
+        hint.setWordWrap(True)
         hint.setObjectName("muted")
         layout.addWidget(hint)
 
@@ -92,6 +99,16 @@ class CreateView(QWidget):
         layout.addWidget(self.status_label)
         layout.addStretch()
 
+    def _refresh_templates(self, *_args) -> None:
+        selected = self.template_combo.currentData()
+        self.template_combo.clear()
+        options = opcoes_templates(self.platform_combo.currentData(), self.language_combo.currentData())
+        for item in options:
+            self.template_combo.addItem(item.label, item.id)
+        current_ids = [self.template_combo.itemData(i) for i in range(self.template_combo.count())]
+        if selected in current_ids:
+            self.template_combo.setCurrentIndex(current_ids.index(selected))
+
     def choose_directory(self) -> None:
         directory = QFileDialog.getExistingDirectory(
             self, "Selecione a pasta de destino", self.directory_input.text() or str(Path.home())
@@ -100,17 +117,24 @@ class CreateView(QWidget):
             self.directory_input.setText(directory)
 
     def _request_creation(self) -> None:
-        self.create_requested.emit(self.name_input.text(), self.directory_input.text())
+        self.create_requested.emit(
+            self.name_input.text(),
+            self.directory_input.text(),
+            self.platform_combo.currentData(),
+            self.language_combo.currentData(),
+            self.template_combo.currentData(),
+        )
 
     def set_running(self, running: bool) -> None:
-        self.create_button.setEnabled(not running)
+        for widget in (
+            self.create_button, self.browse_button, self.name_input,
+            self.directory_input, self.platform_combo, self.language_combo, self.template_combo,
+        ):
+            widget.setEnabled(not running)
         self.cancel_button.setEnabled(running)
-        self.browse_button.setEnabled(not running)
-        self.name_input.setEnabled(not running)
-        self.directory_input.setEnabled(not running)
         if running:
             self.progress.setRange(0, 0)
-            self.status_label.setText("Criando o projeto; acompanhe os logs.")
+            self.status_label.setText("Gerando projeto; acompanhe os logs.")
         else:
             self.progress.setRange(0, 100)
 

@@ -1,7 +1,7 @@
 # Arquitetura técnica do RNPB
 
 - **Data da decisão:** 31/10/2026
-- **Status:** arquitetura-alvo **aprovada**; implementação **pendente**
+- **Status:** arquitetura-alvo **aprovada**; implementação incremental iniciada (PRs #4 e #7)
 - **Decisão relacionada:** [ADR-0001](./ADR/0001-arquitetura-e-geradores.md)
 - **Escopo:** aplicativo desktop para criar projetos React web e React Native
 
@@ -9,7 +9,7 @@
 
 O RNPB permitirá escolher **plataforma, JavaScript/TypeScript, template, destino e bibliotecas** por interface gráfica, executando geradores e instaladores oficiais. O aplicativo não substitui Vite, Expo ou npm e não precisa de servidor próprio no MVP.
 
-**Estado do repositório hoje:** Python + CustomTkinter em `ui/`, lógica de execução em `core/` com `subprocess`/`threading`. A arquitetura descrita abaixo é o **destino da migração**; nenhum diretório ou classe desta proposta foi criado por esta documentação.
+**Estado do repositório:** o PR #4 incorporou **Python + PySide6/QProcess** na `main`. O PR #7 adiciona Vite/Expo com JS/TS e templates por catálogo local. A árvore de módulos a seguir é uma **estrutura-alvo**, ainda não corresponde literalmente aos caminhos atuais em `ui/` e `core/`.
 
 ## 2. Stack definida
 
@@ -129,7 +129,7 @@ Não remover automaticamente diretórios existentes. Em falha com projeto parcia
 | React Native | JavaScript | `blank` | Expo |
 | React Native | TypeScript | `blank-typescript` | Expo |
 
-Esses são os **quatro fluxos mínimos aceitos** para a primeira fase. Templates adicionais só entram após serem validados por plataforma/linguagem/versão.
+Esses são os **quatro fluxos mínimos aceitos**. O PR #7 também inclui `react-compiler`, `react-compiler-ts` (Vite) e `default`/`tabs` (Expo, TypeScript). A lista é curada localmente; novas opções exigem validação por plataforma/linguagem/versão. O gerador Vite exige uma segunda etapa `npm install` no diretório gerado.
 
 - React web: criar por `npm create vite@latest ...`; instalar extras por npm.
 - Expo: criar por `npx create-expo-app@latest ...`; preferir `npx expo install` para pacotes gerenciados pelo SDK.

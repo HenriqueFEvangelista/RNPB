@@ -11,21 +11,21 @@ Público-alvo: estudantes, iniciantes e desenvolvedores que desejam automatizar 
 
 ## 2. Estado atual e evolução
 
-O repositório existente utiliza **Python + CustomTkinter**, com organização básica em `ui/` e `core/`. Há um fluxo para gerar projeto **Expo / blank**, verificar Node.js/npm e apresentar logs e progresso. O código utiliza `subprocess` e `threading`. A opção React Native CLI aparece na lógica, mas não constitui ainda uma experiência de seleção implementada na interface. O resultado da execução e a atualização segura da interface ainda precisam de aprimoramento.
+A arquitetura **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi aprovada no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). O PR #4 migrou a interface e a execução do Expo, incorporado à `main`; o PR #7 implementa React Web (Vite), JS/TS e templates oficiais e está **em revisão**, ainda não incorporado à `main`.
 
-A arquitetura-alvo **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi **aprovada** no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). A migração ainda **não foi implementada**: o código existente continua usando CustomTkinter, `subprocess` e `threading`. A estrutura e os contratos técnicos estão definidos em [ARQUITETURA.md](./ARQUITETURA.md).
+As regras de template e os planos de comando ficam em `core/`; `ui/` apresenta os seletores e orquestra geração e instalação. A organização modular completa de [ARQUITETURA.md](./ARQUITETURA.md) permanece uma evolução incremental.
 
 ## 3. Requisitos funcionais
 
 | ID | Requisito | Prioridade | Situação |
 | --- | --- | --- | --- |
-| RF-01 | Selecionar React web ou React Native na criação. | Alta | Planejado |
-| RF-02 | Selecionar JavaScript ou TypeScript, conforme as opções do gerador. | Alta | Planejado |
-| RF-03 | Selecionar templates oficiais válidos para a plataforma/linguagem. | Alta | Planejado |
+| RF-01 | Selecionar React web ou React Native na criação. | Alta | Implementado no PR #7 |
+| RF-02 | Selecionar JavaScript ou TypeScript, conforme as opções do gerador. | Alta | Implementado no PR #7 |
+| RF-03 | Selecionar templates oficiais válidos para a plataforma/linguagem. | Alta | Implementado no PR #7 |
 | RF-04 | Definir nome e pasta, validar entradas e evitar sobrescrever projetos existentes. | Alta | Parcial |
 | RF-05 | Identificar Node.js, npm/npx e informar erros de pré-requisitos. | Alta | Parcial |
-| RF-06 | Criar React web com gerador oficial Vite. | Alta | Planejado |
-| RF-07 | Criar React Native com gerador oficial Expo. | Alta | Parcial |
+| RF-06 | Criar React web com gerador oficial Vite. | Alta | Implementado no PR #7, pendente teste manual |
+| RF-07 | Criar React Native com gerador oficial Expo. | Alta | Implementado; opções TS no PR #7 |
 | RF-08 | Pesquisar pacotes no npm Registry e mostrar metadados relevantes. | Alta | Planejado |
 | RF-09 | Filtrar bibliotecas React Native por plataforma e indicação de compatibilidade com Expo Go. | Média | Planejado |
 | RF-10 | Selecionar bibliotecas e ferramentas opcionais, instalar com o gerenciador apropriado e apresentar o resultado individual. | Alta | Planejado |
@@ -65,7 +65,7 @@ A arquitetura-alvo **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi **aprova
 
 ## 6. Roadmap de entrega (proposta)
 
-**Fase 1 — Migração e núcleo confiável:** substituir a interface CustomTkinter por PySide6/Qt Widgets/QSS; executar processos por QProcess; corrigir detecção de ambiente, segurança da execução, códigos de saída, logs e cancelamento; abstrair geradores; incluir Vite e seleção JS/TS/templates oficiais.
+**Fase 1 — Migração e núcleo confiável:** PySide6 e QProcess foram incorporados no PR #4; React Web/Vite e seleção JS/TS/templates são entregues no PR #7 (pendente de revisão e validação manual). Continuam necessárias verificações de cancelamento real, compatibilidade de versões Node e empacotamento.
 
 **Fase 2 — Catálogo e configuração:** consumir npm Registry, React Native Directory, instalar bibliotecas selecionadas, cache e filtragem de compatibilidade.
 
@@ -82,7 +82,7 @@ A arquitetura-alvo **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi **aprova
 
 ## 8. Pendências de decisão
 
-- A escolha **PySide6** está encerrada; implementar a migração em uma etapa própria, preservando o comportamento funcional existente.
+- A escolha **PySide6** está encerrada e a migração inicial foi incorporada no PR #4; futuras melhorias seguem a arquitetura adotada.
 - Nome final do produto após incluir React web.
 - Quais bibliotecas/templates entrarão no catálogo curado inicial.
 - Estratégia de distribuição/atualização do executável.

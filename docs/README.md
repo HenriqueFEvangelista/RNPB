@@ -11,21 +11,21 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - [Documentação de APIs e integrações](./API.md) — npm Registry, React Native Directory, GitHub e ferramentas locais.
 - [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão **aceita**, contexto, alternativas e consequências.
 
-## Estado do repositório na criação destes documentos
+## Estado da implementação (PR #7)
 
-**Implementado / presente no código:**
-- Aplicativo desktop em **Python + CustomTkinter** (não em PySide6).
-- Módulos em `ui/` e `core/`.
-- Fluxo de criação de projeto Expo com template `blank` via `npx create-expo-app@latest`.
-- Verificações de ambiente (Node.js e npm), visualização de logs e indicador de progresso por etapas.
-- Execução de comandos via `subprocess` e thread de trabalho.
+**Implementado no código da branch `feat/react-vite-js-ts-templates` (pendente de merge):**
+- Aplicativo desktop em **Python + PySide6 / Qt Widgets / QSS** e execução assíncrona com **QProcess**.
+- Módulos atuais em `ui/` e `core/`; a organização completa da arquitetura-alvo ainda é evolutiva.
+- Geradores **React Web (Vite)** e **React Native (Expo)**, seleção de JavaScript/TypeScript e catálogo local de templates oficiais.
+- Criação Vite seguida de **`npm install`** no projeto gerado; Expo usa `create-expo-app`.
+- Validação de ambiente, destino, combinação de template, logs e status de erro/cancelamento.
+- Testes unitários e Qt via GitHub Actions no Windows e Linux.
 
-**Planejado, não implementado nesta documentação:**
-- React web com Vite; seleção de JavaScript/TypeScript e templates.
-- Catálogo de bibliotecas, filtros de compatibilidade e instalação pela interface.
-- Integração com npm Registry, React Native Directory e GitHub.
-- Execução do Expo Go nos modos LAN/Tunnel; melhorias de cancelamento, tratamento de erros e gerenciamento de projetos.
-- Migração **aprovada** da interface para **PySide6 + Qt Widgets/QSS**, com `QProcess` no lugar da execução atual; a migração **ainda não foi codificada**.
+**Planejado para próximas etapas:**
+- Pesquisa e instalação opcional de bibliotecas, filtros de compatibilidade e cache.
+- Integração com npm Registry, React Native Directory e GitHub (este último opcional).
+- Expo LAN/Tunnel, abertura no editor e gerenciamento de projetos existentes.
+- Validação manual dos novos geradores em Windows e empacotamento final com PyInstaller.
 
 A presença de um requisito ou de uma integração nestes arquivos **não indica que a funcionalidade já esteja disponível**.
 

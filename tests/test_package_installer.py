@@ -54,3 +54,11 @@ def test_valida_manifest_depois_de_instalar():
     manifest = {"dependencies": {"axios": "^1.0"}, "devDependencies": {"zustand": "^1.0"}}
     assert pacotes_instalados(manifest, ("axios", "zustand", "expo-image")) == ("axios", "zustand")
     assert pacotes_instalados({}, ("axios",)) == ()
+
+
+
+def test_nome_invalido_na_instalacao_nao_resolve_pasta_pai(tmp_path, tools):
+    (tmp_path / "package.json").write_text("{}", encoding="utf-8")
+    spec = ProjectSpec("..", str(tmp_path), REACT_WEB, JAVASCRIPT, "react")
+    with pytest.raises(ValueError, match="Nome inválido"):
+        montar_instalacao_bibliotecas(spec, ["axios"], tools)

@@ -1,7 +1,7 @@
 # Requisitos do RNPB
 
 **Versão:** levantamento inicial (31/10/2026)  
-**Situação:** planejamento; não representa funcionalidades concluídas.
+**Situação:** acompanhamento de requisitos e implementação; funcionalidades marcadas como PR só entram na `main` após merge.
 
 ## 1. Visão do produto
 
@@ -11,9 +11,9 @@ Público-alvo: estudantes, iniciantes e desenvolvedores que desejam automatizar 
 
 ## 2. Estado atual e evolução
 
-A arquitetura **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi aprovada no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). O PR #4 migrou a interface e a execução do Expo, incorporado à `main`; o PR #7 implementa React Web (Vite), JS/TS e templates oficiais e está **em revisão**, ainda não incorporado à `main`.
+A arquitetura **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi aprovada no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). O PR #4 migrou a interface e a execução do Expo, incorporado à `main`; o PR #7 implementou React Web (Vite), JS/TS e templates oficiais e já foi incorporado à `main`. O PR #9 implementa a seleção e instalação opcional de bibliotecas durante a criação e ainda está em revisão.
 
-As regras de template e os planos de comando ficam em `core/`; `ui/` apresenta os seletores e orquestra geração e instalação. A organização modular completa de [ARQUITETURA.md](./ARQUITETURA.md) permanece uma evolução incremental.
+As regras de templates, catálogo de pacotes, integração HTTP e planos de instalação ficam em `core/`; `ui/` apresenta o wizard, executa as buscas em workers Qt e orquestra geração e instalação. A organização modular completa de [ARQUITETURA.md](./ARQUITETURA.md) permanece uma evolução incremental.
 
 ## 3. Requisitos funcionais
 
@@ -26,9 +26,9 @@ As regras de template e os planos de comando ficam em `core/`; `ui/` apresenta o
 | RF-05 | Identificar Node.js, npm/npx e informar erros de pré-requisitos. | Alta | Parcial |
 | RF-06 | Criar React web com gerador oficial Vite. | Alta | Implementado no PR #7, pendente teste manual |
 | RF-07 | Criar React Native com gerador oficial Expo. | Alta | Implementado; opções TS no PR #7 |
-| RF-08 | Pesquisar pacotes no npm Registry e mostrar metadados relevantes. | Alta | Planejado |
-| RF-09 | Filtrar bibliotecas React Native por plataforma e indicação de compatibilidade com Expo Go. | Média | Planejado |
-| RF-10 | Selecionar bibliotecas e ferramentas opcionais, instalar com o gerenciador apropriado e apresentar o resultado individual. | Alta | Planejado |
+| RF-08 | Pesquisar pacotes no npm Registry e mostrar metadados relevantes. | Alta | Implementado no PR #9 |
+| RF-09 | Filtrar bibliotecas React Native por plataforma e indicação de compatibilidade com Expo Go. | Média | Parcial no PR #9: filtro Expo Go; filtros individuais Android/iOS ainda não implementados |
+| RF-10 | Selecionar bibliotecas e ferramentas opcionais, instalar com o gerenciador apropriado e apresentar o resultado individual. | Alta | Parcial no PR #9: instalação de pacotes na criação e resultado da etapa; ferramentas e gerenciamento posterior pendentes |
 | RF-11 | Executar Expo em modo LAN ou Tunnel (`@expo/ngrok` opcional), exibindo instruções/QR Code quando disponível. | Média | Planejado |
 | RF-12 | Exibir logs em tempo real, status, falhas reais, resultado e permitir cancelamento seguro. | Alta | Parcial |
 | RF-13 | Abrir o diretório resultante e, opcionalmente, o projeto no VS Code. | Média | Planejado |
@@ -65,9 +65,9 @@ As regras de template e os planos de comando ficam em `core/`; `ui/` apresenta o
 
 ## 6. Roadmap de entrega (proposta)
 
-**Fase 1 — Migração e núcleo confiável:** PySide6 e QProcess foram incorporados no PR #4; React Web/Vite e seleção JS/TS/templates são entregues no PR #7 (pendente de revisão e validação manual). Continuam necessárias verificações de cancelamento real, compatibilidade de versões Node e empacotamento.
+**Fase 1 — Migração e núcleo confiável:** PySide6/QProcess (PR #4) e React Web/Vite com JS/TS/templates (PR #7) foram incorporados à `main` e validados manualmente pelo mantenedor. Continuam necessárias verificações de cancelamento real, compatibilidade de versões Node e empacotamento.
 
-**Fase 2 — Catálogo e configuração:** consumir npm Registry, React Native Directory, instalar bibliotecas selecionadas, cache e filtragem de compatibilidade.
+**Fase 2 — Catálogo e configuração:** PR #9 implementa busca npm Registry + React Native Directory, catálogo local, filtros básicos e instalação opcional durante a criação, com cache em memória. Página de projetos existentes, cache persistente e filtros adicionais seguem pendentes.
 
 **Fase 3 — Experiência de desenvolvimento:** alternar Expo LAN/Tunnel, verificar/instalar `@expo/ngrok` com consentimento, abrir projeto no editor e melhorar diagnóstico.
 
@@ -84,7 +84,7 @@ As regras de template e os planos de comando ficam em `core/`; `ui/` apresenta o
 
 - A escolha **PySide6** está encerrada e a migração inicial foi incorporada no PR #4; futuras melhorias seguem a arquitetura adotada.
 - Nome final do produto após incluir React web.
-- Quais bibliotecas/templates entrarão no catálogo curado inicial.
+- O catálogo inicial de sugestões consta no PR #9 e deverá ser revisado conforme compatibilidade e necessidade.
 - Estratégia de distribuição/atualização do executável.
 
 Ver também [ARQUITETURA.md](./ARQUITETURA.md), [API.md](./API.md) e [ADR-0001](./ADR/0001-arquitetura-e-geradores.md).

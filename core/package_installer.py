@@ -4,7 +4,7 @@ from pathlib import Path
 
 from core.environment import EnvironmentTools
 from core.packages import validate_package_names
-from core.project_creator import CommandPlan, ProjectSpec, _montar_cli
+from core.project_creator import CommandPlan, ProjectSpec, _montar_cli, validar_nome_projeto
 from core.templates import REACT_NATIVE, REACT_WEB, validar_template
 
 
@@ -17,7 +17,11 @@ def montar_instalacao_bibliotecas(
     if not packages:
         raise ValueError("Nenhuma biblioteca foi selecionada.")
 
-    project = Path(spec.destination).expanduser().resolve() / spec.name
+    validar_nome_projeto(spec.name)
+    root = Path(spec.destination).expanduser().resolve()
+    project = (root / spec.name).resolve()
+    if project.parent != root:
+        raise ValueError("Destino do projeto fora da pasta selecionada.")
     if not (project / "package.json").is_file():
         raise ValueError("Não foi encontrado package.json no projeto.")
 

@@ -1,7 +1,7 @@
 # Arquitetura técnica do RNPB
 
 - **Data da decisão:** 31/10/2026
-- **Status:** arquitetura-alvo **aprovada**; implementação incremental iniciada (PRs #4 e #7)
+- **Status:** arquitetura-alvo **aprovada**; PRs #4 e #7 incorporados e catálogo/instalação do PR #9 em revisão.
 - **Decisão relacionada:** [ADR-0001](./ADR/0001-arquitetura-e-geradores.md)
 - **Escopo:** aplicativo desktop para criar projetos React web e React Native
 
@@ -9,7 +9,7 @@
 
 O RNPB permitirá escolher **plataforma, JavaScript/TypeScript, template, destino e bibliotecas** por interface gráfica, executando geradores e instaladores oficiais. O aplicativo não substitui Vite, Expo ou npm e não precisa de servidor próprio no MVP.
 
-**Estado do repositório:** o PR #4 incorporou **Python + PySide6/QProcess** na `main`. O PR #7 adiciona Vite/Expo com JS/TS e templates por catálogo local. A árvore de módulos a seguir é uma **estrutura-alvo**, ainda não corresponde literalmente aos caminhos atuais em `ui/` e `core/`.
+**Estado do repositório:** o PR #4 incorporou **Python + PySide6/QProcess** na `main`. O PR #7 adicionou Vite/Expo com JS/TS e templates por catálogo local. O PR #9 acrescenta a seleção opcional de bibliotecas durante a criação, via catálogo local, npm Registry e React Native Directory. A árvore de módulos a seguir é uma **estrutura-alvo**, ainda não corresponde literalmente aos caminhos atuais em `ui/` e `core/`.
 
 ## 2. Stack definida
 
@@ -192,3 +192,20 @@ O nome **RNPB** permanece como nome do repositório/produto nesta fase; eventual
 - [ADR-0001 — decisão aceita](./ADR/0001-arquitetura-e-geradores.md)
 - [Requisitos](./REQUISITOS.md)
 - [APIs e integrações](./API.md)
+
+## 11. Catálogo e instalador — implementação incremental (PR #9)
+
+Antes da reorganização integral em `rnpb/`, a primeira versão foi implementada nos diretórios existentes:
+
+- `core/packages.py`: modelos, sugestões locais e validação de identificadores npm.
+- `core/package_catalog.py`: acesso a npm Registry/React Native Directory e cache em memória de 600 segundos.
+- `core/package_installer.py`: comandos de instalação e verificação do manifest.
+- `ui/package_selector.py`: pesquisa, categorias, filtro Expo Go e seleção múltipla.
+- `ui/catalog_worker.py`: HTTP assíncrono em workers Qt, com timeout e sinais.
+- `ui/create_view.py`: wizard com 4 etapas; `ui/app.py`: pipeline de geração, dependências-base e instalação opcional.
+
+**Regra de compatibilidade:** sem metadados positivos explícitos do Directory, o resultado Expo Go é `unknown` (não verificado). A compatibilidade por SDK não é garantida. O usuário escolhe pacotes voluntariamente após revisão; scripts npm podem ser executados pelo gerenciador de pacotes.
+
+**Falha parcial:** o projeto permanece no disco e a UI informa que bibliotecas opcionais não foram instaladas. Resultados de pesquisas externas são tratados como dados não confiáveis. Não há tokens compartilhados embutidos no aplicativo.
+
+A futura página de projetos existentes reutilizará o seletor, mas não faz parte deste PR.

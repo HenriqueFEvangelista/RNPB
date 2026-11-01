@@ -59,3 +59,21 @@ def test_ignora_resposta_obsoleta(qtbot):
     count = widget.results.count()
     widget.apply_results("axios", REACT_WEB, CatalogResult((PackageInfo("axios"),)))
     assert widget.results.count() == count
+
+
+
+def test_selecao_curada_recebe_compatibilidade_apos_busca(qtbot):
+    widget = PackageSelector(REACT_NATIVE)
+    qtbot.addWidget(widget)
+    item = next(
+        widget.results.item(index)
+        for index in range(widget.results.count())
+        if widget.results.item(index).data(Qt.ItemDataRole.UserRole).name == "expo-image"
+    )
+    item.setCheckState(Qt.CheckState.Checked)
+    assert widget.selected_packages[0].expo_go is None
+    widget.search_input.setText("expo-image")
+    widget.apply_results("expo-image", REACT_NATIVE, CatalogResult((
+        PackageInfo("expo-image", "Imagens", expo_go=True, source="directory"),
+    )))
+    assert widget.selected_packages[0].expo_go is True

@@ -120,6 +120,11 @@ class PackageSelector(QWidget):
         if query != self.search_input.text().strip() or target != self._target:
             return
         self._results = result.packages if result.packages else curated_packages(target)
+        # Se a pesquisa trouxe metadados mais completos (ex.: Expo Go),
+        # atualizar também os itens selecionados anteriormente pelo catálogo local.
+        for package in result.packages:
+            if package.name in self._selected:
+                self._selected[package.name] = package
         if result.warning:
             label = result.warning + " "
             if not result.packages:

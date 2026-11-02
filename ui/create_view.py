@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from PySide6.QtCore import Qt, QSize, Signal
+from PySide6.QtCore import Qt, QSize, QTimer, Signal
 from PySide6.QtWidgets import (
     QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
     QProgressBar, QPushButton, QStackedWidget, QStyle, QToolButton,
@@ -247,6 +247,7 @@ class CreateView(QWidget):
             self._last_invalid_field = ""
             self.validation_banner.clear()
             self.validation_banner.hide()
+            self.status_label.setText("Aguardando configuração.")
 
     def _clear_template_error(self, *_args) -> None:
         if self._last_invalid_field == "template":
@@ -282,6 +283,11 @@ class CreateView(QWidget):
         self._refresh_navigation()
         if focus:
             focus.setFocus(Qt.FocusReason.OtherFocusReason)
+            # Ao abrir a janela/etapa, o foco pode ser aplicado após o próximo
+            # ciclo de eventos (especialmente se o wizard veio da aba Logs).
+            QTimer.singleShot(0, lambda widget=focus: widget.setFocus(
+                Qt.FocusReason.OtherFocusReason
+            ))
 
     def show_failure(self, message: str) -> None:
         """Erros externos e do runner também ficam visíveis no wizard."""

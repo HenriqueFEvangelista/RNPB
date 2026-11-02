@@ -209,3 +209,11 @@ Antes da reorganização integral em `rnpb/`, a primeira versão foi implementad
 **Falha parcial:** o projeto permanece no disco e a UI informa que bibliotecas opcionais não foram instaladas. Resultados de pesquisas externas são tratados como dados não confiáveis. Não há tokens compartilhados embutidos no aplicativo.
 
 A futura página de projetos existentes reutilizará o seletor, mas não faz parte deste PR.
+
+## 12. Navegação e validação do wizard (issue #11)
+
+O `CreateView` inclui **QToolButton** com ícones nativos do Qt para cada etapa, indicador visual de progresso e estilos de etapa ativa/concluída. A seleção direta de etapas futuras só é permitida quando as etapas anteriores forem válidas. Voltar não exige revalidação.
+
+A validação de `ProjectSpec` continua em `core/project_creator.py` e é reutilizada tanto na navegação do wizard quanto antes de emitir comandos no `MainWindow`. Validações de template e de nomes de bibliotecas permanecem no núcleo. O wizard envia erros ao campo correspondente, mostra banner visível e posiciona a página/foco; não depende de logs para mensagens ao usuário.
+
+**Política atual:** nomes de projetos começam com uma letra **minúscula** e contêm somente minúsculas, números, hífen ou sublinhado. Nomes inválidos não são corrigidos silenciosamente. A regra pode mudar num ADR futuro, mas nesta etapa apenas o feedback/navegação mudou.

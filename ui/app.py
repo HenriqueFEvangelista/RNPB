@@ -15,7 +15,10 @@ from core.package_catalog import CatalogService
 from core.package_installer import montar_instalacao_bibliotecas, pacotes_instalados
 from core.packages import validate_package_names
 from core.process_runner import ProcessRunner
-from core.project_creator import ProjectSpec, montar_comando, montar_comando_instalacao, validar_projeto
+from core.project_creator import (
+    ProjectSpec, montar_comando, montar_comando_instalacao,
+    validar_nome_projeto, validar_projeto,
+)
 from core.templates import REACT_WEB
 from ui.catalog_worker import CatalogWorker
 from ui.create_view import CreateView
@@ -108,16 +111,29 @@ class MainWindow(QMainWindow):
             return
         spec = ProjectSpec(name, destination, target, language, template_id)
         try:
-            selected_names = validate_package_names(packages)
+            validar_nome_projeto(name)
+        except ValueError as error:
+            self._failure(str(error), step=0, field="name")
+            return
+        try:
             expected = validar_projeto(name, destination)
-            ok, message, tools = verificar_ambiente()
-            self.logs_view.add_log(message + "\n")
-            if not ok or tools is None:
-                self._failure(message)
-                return
+        except ValueError as error:
+            self._failure(str(error), step=0, field="directory")
+            return
+        try:
+            selected_names = validate_package_names(packages)
+        except ValueError as error:
+            self._failure(str(error), step=2, field="packages")
+            return
+        ok, message, tools = verificar_ambiente()
+        self.logs_view.add_log(message + "\n")
+        if not ok or tools is None:
+            self._failure(message)
+            return
+        try:
             plan = montar_comando(spec, tools)
         except ValueError as error:
-            self._failure(str(error))
+            self._failure(str(error), step=1, field="template")
             return
 
         self._selected_packages = selected_names
@@ -135,8 +151,13 @@ class MainWindow(QMainWindow):
         if not self.runner.run(plan):
             self._finish_error("Já existe uma execução ativa.")
 
-    def _failure(self, message: str) -> None:
-        self.create_view.show_result(f"Erro: {message}")
+    def _failure(self, message: str, step: int | None = None, field: str = "") -> None:
+        # Falhas de entrada levam ao campo incorreto; falhas de CLI aparecem
+        # no próprio wizard (não somente na aba de logs).
+        if step is not None:
+            self.create_view.show_validation_error(message, step, field)
+        else:
+            self.create_view.show_failure(message)
         self.logs_view.add_log(f"Erro: {message}\n")
         self.pages.setCurrentWidget(self.create_view)
 

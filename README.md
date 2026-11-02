@@ -23,6 +23,8 @@ O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar projetos 
 
 O assistente apresenta **Projeto → Template → Bibliotecas → Revisão**. Na etapa de bibliotecas o usuário pode não selecionar nada, escolher sugestões locais ou pesquisar pacotes online, filtrando por categoria e, no React Native, pelo indicador de compatibilidade com Expo Go.
 
+**Navegação e validação:** o topo do assistente mostra quatro etapas com ícones e uma barra de progresso. Clique em uma etapa para voltar ou avançar, desde que os campos obrigatórios anteriores estejam corretos. Ao tentar continuar ou criar com nome inválido (por exemplo, usando maiúsculas), sem pasta de destino ou com um projeto já existente, o RNPB abre a etapa correta, destaca o campo e exibe um aviso visível no formulário. O log permanece disponível para diagnósticos de execução.
+
 - Para **React Web**, a busca consulta o **npm Registry** e a instalação adicional usa `npm install nome-do-pacote`.
 - Para **React Native**, a busca consulta **npm Registry e React Native Directory** e a instalação adicional usa `npx expo install nome-do-pacote --npm`, respeitando as versões compatíveis conhecidas pelo Expo CLI.
 - Dados de compatibilidade Expo Go aparecem como **compatível**, **incompatível** ou **não verificado**. Pacotes que aparecem apenas no npm não são automaticamente considerados compatíveis.

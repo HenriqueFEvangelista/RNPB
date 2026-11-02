@@ -75,6 +75,7 @@ class CreateView(QWidget):
         layout.addWidget(self.step_label)
 
         self.validation_banner = QLabel()
+        self.validation_banner.setTextFormat(Qt.TextFormat.PlainText)
         self.validation_banner.setObjectName("validationBanner")
         self.validation_banner.setWordWrap(True)
         self.validation_banner.setVisible(False)
@@ -92,6 +93,7 @@ class CreateView(QWidget):
         self.name_input.setPlaceholderText("meu-projeto")
         self.name_input.setObjectName("projectName")
         self.name_error = QLabel()
+        self.name_error.setTextFormat(Qt.TextFormat.PlainText)
         self.name_error.setObjectName("inlineError")
         self.name_error.setWordWrap(True)
         self.name_error.setVisible(False)
@@ -123,6 +125,7 @@ class CreateView(QWidget):
         directory_row.addWidget(self.directory_input)
         directory_row.addWidget(self.browse_button)
         self.directory_error = QLabel()
+        self.directory_error.setTextFormat(Qt.TextFormat.PlainText)
         self.directory_error.setObjectName("inlineError")
         self.directory_error.setWordWrap(True)
         self.directory_error.setVisible(False)
@@ -168,6 +171,7 @@ class CreateView(QWidget):
         review_title.setObjectName("sectionTitle")
         review_layout.addWidget(review_title)
         self.review_summary = QLabel()
+        self.review_summary.setTextFormat(Qt.TextFormat.PlainText)
         self.review_summary.setWordWrap(True)
         review_layout.addWidget(self.review_summary)
         review_warning = QLabel(

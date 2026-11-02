@@ -258,6 +258,7 @@ class CreateView(QWidget):
             self._last_invalid_field = ""
             self.validation_banner.clear()
             self.validation_banner.hide()
+            self.status_label.setText("Aguardando configuração.")
 
     def show_validation_error(self, message: str, step: int, field: str = "") -> None:
         """Navega para a etapa relevante e mostra erro na tela, não só nos logs."""
@@ -301,6 +302,9 @@ class CreateView(QWidget):
         self.status_label.setText(text)
 
     def _validate_project(self) -> bool:
+        if not self.name_input.text().strip():
+            self.show_validation_error("Informe o nome do projeto.", 0, "name")
+            return False
         try:
             validar_nome_projeto(self.name_input.text())
         except ValueError as error:

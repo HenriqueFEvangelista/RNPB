@@ -22,7 +22,7 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 | RF-01 | Selecionar React web ou React Native na criação. | Alta | Implementado no PR #7 |
 | RF-02 | Selecionar JavaScript ou TypeScript, conforme as opções do gerador. | Alta | Implementado no PR #7 |
 | RF-03 | Selecionar templates oficiais válidos para a plataforma/linguagem. | Alta | Implementado no PR #7 |
-| RF-04 | Definir nome e pasta, validar entradas e evitar sobrescrever projetos existentes. | Alta | Parcial |
+| RF-04 | Definir nome e pasta, validar entradas e evitar sobrescrever projetos existentes. | Alta | Implementado; feedback inline e redirecionamento por etapa no PR #9 (issue #11) |
 | RF-05 | Identificar Node.js, npm/npx e informar erros de pré-requisitos. | Alta | Parcial |
 | RF-06 | Criar React web com gerador oficial Vite. | Alta | Implementado no PR #7, pendente teste manual |
 | RF-07 | Criar React Native com gerador oficial Expo. | Alta | Implementado; opções TS no PR #7 |
@@ -36,6 +36,14 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 | RF-15 | Consultar exemplos/templates de terceiros via GitHub, com origem, licença e riscos explicitados. | Baixa | Futuro |
 
 **Observações de compatibilidade:** os templates oficiais do Expo têm combinações próprias de linguagem; nem todo template está disponível em JavaScript. Pacotes React web não devem ser apresentados automaticamente como compatíveis com React Native. Os dados externos são indicativos e precisam de validação.
+
+### Experiência do assistente (issue #11)
+
+- Barra de progresso superior com ícones para **Projeto, Template, Bibliotecas e Revisão**.
+- Ao clicar para avançar, validar as etapas anteriores; a navegação de retorno permanece livre durante a configuração.
+- Nome inválido (incluindo letras maiúsculas), campo obrigatório vazio, diretório inexistente ou já ocupado gera mensagem **dentro do formulário**, campo destacado e foco solicitado no controle.
+- Tentativa de criar a partir da Revisão com erro em etapa anterior redireciona automaticamente para a primeira etapa inválida.
+- Erros de execução, diferentemente dos erros de formulário, permanecem visíveis na interface e no painel de logs.
 
 ## 4. Critérios de aceitação do MVP proposto
 

@@ -154,12 +154,12 @@ class MainWindow(QMainWindow):
     def _failure(self, message: str, step: int | None = None, field: str = "") -> None:
         # Falhas de entrada levam ao campo incorreto; falhas de CLI aparecem
         # no próprio wizard (não somente na aba de logs).
+        self.pages.setCurrentWidget(self.create_view)
         if step is not None:
             self.create_view.show_validation_error(message, step, field)
         else:
             self.create_view.show_failure(message)
         self.logs_view.add_log(f"Erro: {message}\n")
-        self.pages.setCurrentWidget(self.create_view)
 
     def _process_started(self) -> None:
         self.logs_view.add_log("Processo iniciado.\n")

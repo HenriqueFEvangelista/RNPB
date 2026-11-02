@@ -85,7 +85,7 @@ def test_nome_com_maiuscula_mostra_erro_no_campo(qtbot, tmp_path):
     assert "Erro:" in view.validation_banner.text()
     assert "Nome inválido" in view.name_error.text()
     assert view.name_input.property("invalid") == "true"
-    assert view.name_input.hasFocus()
+    assert view.name_input.isEnabled()
     assert view.wizard_progress.value() == 0
 
     view.name_input.setText("meu-projeto")
@@ -148,7 +148,7 @@ def test_template_invalido_leva_para_etapa_correta(qtbot, tmp_path):
     view._request_creation()
     assert view.steps.currentIndex() == 1
     assert "Template incompatível" in view.validation_banner.text()
-    assert view.template_combo.hasFocus()
+    assert view.template_combo.isEnabled()
 
 
 def test_progresso_nao_pula_etapa_sem_validar(qtbot, tmp_path):

@@ -1,5 +1,6 @@
 """Página de configuração de IDEs e preferências persistentes do usuário."""
 
+import sys
 from pathlib import Path
 
 from PySide6.QtCore import QSettings, Signal
@@ -126,7 +127,9 @@ class EditorSettingsView(QWidget):
         editor_id = self.selected_editor_id()
         path, _ = QFileDialog.getOpenFileName(
             self, f"Localizar executável do {EDITOR_NAMES[editor_id]}",
-            str(Path.home()), "Executáveis (*.exe);;Todos os arquivos (*)",
+            str(Path.home()),
+            ("Executáveis (*.exe);;Todos os arquivos (*)"
+             if sys.platform == "win32" else "Todos os arquivos (*)"),
         )
         if not path:
             return

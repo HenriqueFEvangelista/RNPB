@@ -163,6 +163,26 @@ Esses são os **quatro fluxos mínimos aceitos**. O PR #7 também inclui `react-
 - **Cache e configurações:** JSON no espaço do usuário via `platformdirs`; cache com data da consulta, origem, validade e degradação explícita quando desatualizado. Nunca escrever arquivos de configuração dentro do diretório de instalação do executável.
 - **Segurança:** validar nomes/caminhos/pacotes, apresentar comandos antes de executar ações relevantes, não executar automaticamente templates de terceiros, expor risco de scripts de instalação e não registrar segredos nos logs.
 
+### Detecção e abertura de IDEs (issue #12)
+
+O serviço \`core/editor_manager.py\` não depende de Qt e conhece somente os editores
+permitidos (VS Code e Android Studio). Ele detecta executáveis no PATH, em diretórios
+convencionais e via Registro do Windows (\`App Paths\`), priorizando caminhos manuais
+validados. Abertura via \`subprocess.Popen\` com lista de argumentos, sem shell, após
+confirmar que a pasta existe. A GUI não recebe um caminho arbitrário de comando.
+
+A página \`ui/editor_settings.py\` adapta o serviço ao PySide6. As preferências ficam
+salvas com \`QSettings\` no perfil do usuário: \`editors/preferred\`,
+\`editors/auto_open\` e \`editors/<editor-id>/path\`. Trata-se de persistência de
+preferências **do editor local** (diferente do futuro cache de catálogos em JSON
+previsto na arquitetura). Não é exigida instalação de bibliotecas adicionais.
+
+Ao final do pipeline (**gerar → npm install se Vite → instalar bibliotecas opcionais
+se selecionadas → verificar**), a janela libera o botão de abrir IDE nos Logs e, se
+o usuário optou, inicia o editor. O erro do editor é comunicado separadamente
+e nunca altera o sucesso já verificado da criação. Expo abre na pasta raiz, sem
+executar \`expo prebuild\` ou exigir \`android/\`. Sem editor, o fluxo normal permanece.
+
 ## 8. Testes, qualidade e distribuição
 
 **Testes unitários:** validação dos modelos, seleção de template, construção de `CommandSpec`, seleção npm/Expo, cache e normalização de respostas de APIs (fixtures).

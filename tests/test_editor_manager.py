@@ -102,3 +102,29 @@ def test_nao_aceita_pasta_inexistente(tmp_path):
 def test_identificador_de_editor_invalido():
     with pytest.raises(ValueError, match="desconhecido"):
         EditorManager().set_manual_path("terminal", "bash")
+
+
+def test_registro_windows_app_paths(monkeypatch, tmp_path):
+    import sys
+    exe = make_executable(tmp_path / "Code.exe")
+
+    class Key:
+        def __enter__(self):
+            return self
+        def __exit__(self, *_args):
+            return False
+
+    def open_key(root, path):
+        if root == "HKCU" and path.endswith("Code.exe"):
+            return Key()
+        raise OSError("não registrado")
+
+    fake = SimpleNamespace(
+        HKEY_CURRENT_USER="HKCU", HKEY_LOCAL_MACHINE="HKLM",
+        OpenKey=open_key, QueryValueEx=lambda key, value: (str(exe), 1),
+    )
+    monkeypatch.setitem(sys.modules, "winreg", fake)
+    manager = EditorManager(platform_name="win32", environ={"PATH": ""})
+    installation = manager.detect()["vscode"]
+    assert installation.executable == exe
+    assert installation.source == "registro"

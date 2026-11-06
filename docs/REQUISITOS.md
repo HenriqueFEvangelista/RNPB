@@ -31,7 +31,7 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 | RF-10 | Selecionar bibliotecas e ferramentas opcionais, instalar com o gerenciador apropriado e apresentar o resultado individual. | Alta | Parcial no PR #9: instalação de pacotes na criação e resultado da etapa; ferramentas e gerenciamento posterior pendentes |
 | RF-11 | Executar Expo em modo LAN ou Tunnel (`@expo/ngrok` opcional), exibindo instruções/QR Code quando disponível. | Média | Planejado |
 | RF-12 | Exibir logs em tempo real, status, falhas reais, resultado e permitir cancelamento seguro. | Alta | Parcial |
-| RF-13 | Abrir o diretório resultante e, opcionalmente, o projeto no VS Code. | Média | Planejado |
+| RF-13 | Detectar VS Code e Android Studio, configurar preferência e abrir o projeto após criação concluída. | Média | Implementado na branch da issue #12; depende do PR #9 |
 | RF-14 | Disponibilizar catálogo local e cache para o funcionamento básico quando APIs estiverem indisponíveis. | Alta | Planejado |
 | RF-15 | Consultar exemplos/templates de terceiros via GitHub, com origem, licença e riscos explicitados. | Baixa | Futuro |
 
@@ -44,6 +44,15 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 - Nome inválido (incluindo letras maiúsculas), campo obrigatório vazio, diretório inexistente ou já ocupado gera mensagem **dentro do formulário**, campo destacado e foco solicitado no controle.
 - Tentativa de criar a partir da Revisão com erro em etapa anterior redireciona automaticamente para a primeira etapa inválida.
 - Erros de execução, diferentemente dos erros de formulário, permanecem visíveis na interface e no painel de logs.
+
+### Abertura da IDE (issue #12)
+
+- Detectar pelo PATH, diretórios comuns e, no Windows, \`App Paths\` do Registro.
+- Permitir caminho manual validado para VS Code e Android Studio e salvar preferência local via \`QSettings\`.
+- Abrir apenas a **raiz do projeto** e somente após a conclusão de todas as instalações (incluindo pacotes opcionais).
+- Abertura automática é **opt-in**; botão manual em Logs permanece disponível após sucesso.
+- Falha ao iniciar IDE **não altera** o status de criação e não pode abrir arquivos parciais após erro/cancelamento.
+- A ausência de IDE não impede criar projetos. A IDE não é instalada pelo RNPB.
 
 ## 4. Critérios de aceitação do MVP proposto
 

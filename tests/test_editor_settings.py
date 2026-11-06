@@ -119,3 +119,49 @@ def test_caminho_manual_pode_ser_removido(qtbot, tmp_path):
     assert "vscode" not in window.editor_manager.manual_paths
     assert not settings.contains("editors/vscode/path")
     assert not window.editor_view.auto_checkbox.isEnabled()
+
+
+def test_pasta_manual_foi_salva_pelo_dialogo(qtbot, tmp_path, monkeypatch):
+    from PySide6.QtWidgets import QFileDialog
+    window, settings = _window(qtbot, tmp_path)
+    studio = tmp_path / "Apps" / "studio64.exe"
+    studio.parent.mkdir()
+    studio.write_text("mock", encoding="utf-8")
+    view = window.editor_view
+    view.editor_combo.setCurrentIndex(view.editor_combo.findData("android-studio"))
+    monkeypatch.setattr(
+        QFileDialog, "getOpenFileName", lambda *_args: (str(studio), "")
+    )
+    view.choose_executable()
+    assert settings.value("editors/android-studio/path") == str(studio)
+    assert view.selected_installation().executable == studio
+    assert view.auto_checkbox.isEnabled()
+
+
+def test_abertura_ocorre_apos_bibliotecas_opcionais(qtbot, tmp_path, monkeypatch):
+    import json
+    import ui.app as app
+    from core.project_creator import CommandPlan
+
+    _environment(monkeypatch)
+    window, _ = _window(qtbot, tmp_path)
+    window.editor_view.auto_checkbox.setChecked(True)
+    calls = []
+    monkeypatch.setattr(window.editor_manager, "open_project", lambda *args: calls.append(args))
+    monkeypatch.setattr(window.runner, "run", lambda plan: True)
+    monkeypatch.setattr(app, "montar_instalacao_bibliotecas", lambda *args: CommandPlan(
+        "npm", ("install",), str(tmp_path / "app")
+    ))
+    window._create_project(
+        "app", str(tmp_path), REACT_NATIVE, JAVASCRIPT, "blank", packages=("lodash",)
+    )
+    directory = tmp_path / "app"
+    directory.mkdir()
+    manifest = directory / "package.json"
+    manifest.write_text("{}", encoding="utf-8")
+    window._process_completed("success", 0)
+    assert window._stage == "packages"
+    assert not calls
+    manifest.write_text(json.dumps({"dependencies": {"lodash": "^1.0.0"}}), encoding="utf-8")
+    window._process_completed("success", 0)
+    assert calls == [("vscode", directory)]

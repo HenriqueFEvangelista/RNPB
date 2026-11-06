@@ -16,7 +16,7 @@ EDITOR_NAMES = {
 }
 
 _ALLOWED_BASENAMES = {
-    "vscode": {"code.exe", "code-insiders.exe", "code"},
+    "vscode": {"code.exe", "code - insiders.exe", "code"},
     "android-studio": {"studio64.exe", "studio.exe", "studio.sh", "studio"},
 }
 

@@ -11,23 +11,19 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - [Documentação de APIs e integrações](./API.md) — npm Registry, React Native Directory, GitHub e ferramentas locais.
 - [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão **aceita**, contexto, alternativas e consequências.
 
-## Estado da implementação (PR #7)
+## Estado da implementação (PR #9)
 
-**Implementado no código da branch `feat/react-vite-js-ts-templates` (pendente de merge):**
-- Aplicativo desktop em **Python + PySide6 / Qt Widgets / QSS** e execução assíncrona com **QProcess**.
-- Módulos atuais em `ui/` e `core/`; a organização completa da arquitetura-alvo ainda é evolutiva.
-- Geradores **React Web (Vite)** e **React Native (Expo)**, seleção de JavaScript/TypeScript e catálogo local de templates oficiais.
-- Criação Vite seguida de **`npm install`** no projeto gerado; Expo usa `create-expo-app`.
-- Validação de ambiente, destino, combinação de template, logs e status de erro/cancelamento.
-- Testes unitários e Qt via GitHub Actions no Windows e Linux.
+**Implementado e integrado à `main`:** PySide6/QProcess (PR #4); React Web/Vite, Expo, JS/TS e templates oficiais (PR #7).
 
-**Planejado para próximas etapas:**
-- Pesquisa e instalação opcional de bibliotecas, filtros de compatibilidade e cache.
-- Integração com npm Registry, React Native Directory e GitHub (este último opcional).
-- Expo LAN/Tunnel, abertura no editor e gerenciamento de projetos existentes.
-- Validação manual dos novos geradores em Windows e empacotamento final com PyInstaller.
+**Na branch do PR #9, ainda em revisão:**
+- Assistente com etapas **Projeto → Template → Bibliotecas → Revisão**.
+- Catálogo local de sugestões + busca npm Registry e React Native Directory.
+- Workers Qt, debounce, timeout, cache em memória e fallback em caso de API indisponível.
+- Instalação opcional após criação com `npm install` ou `npx expo install`; validação de saída e do `package.json`.
+- Indicadores de compatibilidade Expo Go que distinguem confirmado, incompatível e não verificado.
+- Testes unitários e de interface para consultas, instalação e falha parcial.
 
-A presença de um requisito ou de uma integração nestes arquivos **não indica que a funcionalidade já esteja disponível**.
+**Ainda planejado:** página de projetos existentes, cache persistente, GitHub API para templates externos, Expo Tunnel, atualização/remoção de pacotes e verificação final do executável no Windows.
 
 ## Princípios
 

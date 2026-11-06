@@ -32,13 +32,18 @@ class CommandPlan:
     working_directory: str
 
 
-def validar_projeto(nome: str, pasta: str) -> Path:
-    """Valida o nome e a pasta de destino sem sobrescrever projetos existentes."""
-    if not _NAME_PATTERN.fullmatch(nome) or nome.casefold() in _WINDOWS_RESERVED:
+def validar_nome_projeto(nome: str) -> None:
+    """Aplica a mesma política de nomes na geração e nas instalações."""
+    if not isinstance(nome, str) or not _NAME_PATTERN.fullmatch(nome) or nome.casefold() in _WINDOWS_RESERVED:
         raise ValueError(
             "Nome inválido: use de 1 a 63 caracteres, iniciando com letra minúscula; "
             "depois use apenas letras minúsculas, números, '-' ou '_'."
         )
+
+
+def validar_projeto(nome: str, pasta: str) -> Path:
+    """Valida o nome e a pasta de destino sem sobrescrever projetos existentes."""
+    validar_nome_projeto(nome)
     if not pasta.strip():
         raise ValueError("Escolha uma pasta de destino.")
     raiz = Path(pasta).expanduser().resolve()

@@ -114,3 +114,15 @@ def test_expo_nao_exige_npm_install_extra(qtbot, tmp_path, monkeypatch):
     window._process_completed("success", 0)
     assert len(plans) == 1
     assert "sucesso" in window.create_view.status_label.text()
+
+
+def test_nome_maiusculo_mostra_erro_na_etapa_correta(qtbot, tmp_path):
+    window = MainWindow()
+    qtbot.addWidget(window)
+    window.show()
+    window.create_view.steps.setCurrentIndex(3)
+    window._create_project("App", str(tmp_path), REACT_WEB, JAVASCRIPT, "react")
+    assert window.create_view.steps.currentIndex() == 0
+    assert "Nome inválido" in window.create_view.name_error.text()
+    assert window.create_view.name_input.property("invalid") == "true"
+    assert not window.runner.is_running

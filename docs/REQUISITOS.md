@@ -47,8 +47,8 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 
 ### Abertura da IDE (issue #12)
 
-- Detectar pelo PATH, diretórios comuns e, no Windows, \`App Paths\` do Registro.
-- Permitir caminho manual validado para VS Code e Android Studio e salvar preferência local via \`QSettings\`.
+- Detectar pelo PATH, diretórios comuns e, no Windows, `App Paths` do Registro.
+- Permitir caminho manual validado para VS Code e Android Studio e salvar preferência local via `QSettings`.
 - Abrir apenas a **raiz do projeto** e somente após a conclusão de todas as instalações (incluindo pacotes opcionais).
 - Abertura automática é **opt-in**; botão manual em Logs permanece disponível após sucesso.
 - Falha ao iniciar IDE **não altera** o status de criação e não pode abrir arquivos parciais após erro/cancelamento.

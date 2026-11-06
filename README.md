@@ -38,12 +38,12 @@ Na página **Editores**, o RNPB detecta Visual Studio Code e Android Studio por 
 caminhos convencionais ou Registro do Windows (App Paths). É possível **localizar o executável
 manualmente**, remover a configuração e repetir a detecção. O editor selecionado, caminho
 manual e opção de abertura automática ficam salvos nas preferências locais do sistema via
-\`QSettings\` (sem alterar os arquivos do projeto).
+`QSettings` (sem alterar os arquivos do projeto).
 
 Após **geração, instalação base e bibliotecas opcionais** concluídas com sucesso,
 o RNPB pode abrir a raiz do projeto automaticamente (recurso desativado por padrão).
 A página Logs também oferece o botão **Abrir projeto na IDE**. Para Expo sem
-diretório nativo \`android/\`, abre a **raiz do projeto**; não executa prebuild.
+diretório nativo `android/`, abre a **raiz do projeto**; não executa prebuild.
 
 - Se nenhum editor for detectado, a criação continua normalmente. Use **Editores → Localizar executável…**.
 - O executável deve pertencer ao editor escolhido. Os comandos são invocados com argumentos separados, **sem shell**.

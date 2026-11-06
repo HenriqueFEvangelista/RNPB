@@ -4,12 +4,13 @@ import json
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QThreadPool
+from PySide6.QtCore import QSettings, QThreadPool
 from PySide6.QtWidgets import (
     QApplication, QFrame, QHBoxLayout, QMainWindow, QMessageBox,
     QPushButton, QStackedWidget, QVBoxLayout, QWidget,
 )
 
+from core.editor_manager import EDITOR_NAMES, EditorLaunchError, EditorManager
 from core.environment import EnvironmentTools, verificar_ambiente
 from core.package_catalog import CatalogService
 from core.package_installer import montar_instalacao_bibliotecas, pacotes_instalados
@@ -22,12 +23,15 @@ from core.project_creator import (
 from core.templates import REACT_WEB
 from ui.catalog_worker import CatalogWorker
 from ui.create_view import CreateView
+from ui.editor_settings import EditorSettingsView
 from ui.logs_view import LogsView
 from ui.theme import APP_STYLE
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(
+        self, editor_manager: EditorManager | None = None, settings: QSettings | None = None
+    ):
         super().__init__()
         self.setWindowTitle("RNPB — React & React Native Project Builder")
         self.resize(1040, 650)
@@ -37,9 +41,16 @@ class MainWindow(QMainWindow):
         self._selected_packages: tuple[str, ...] = ()
         self._stage: str | None = None
         self._close_after_process = False
+        self._last_completed_project: Path | None = None
+        self.settings = settings if settings is not None else QSettings("RNPB", "RNPB")
+        self.editor_manager = editor_manager if editor_manager is not None else EditorManager({
+            editor_id: str(self.settings.value(f"editors/{editor_id}/path", "") or "")
+            for editor_id in EDITOR_NAMES
+        })
         self.runner = ProcessRunner(self)
         self.create_view = CreateView()
         self.logs_view = LogsView()
+        self.editor_view = EditorSettingsView(self.editor_manager, self.settings)
 
         self.catalog = CatalogService()
         self._pool = QThreadPool(self)
@@ -59,19 +70,25 @@ class MainWindow(QMainWindow):
         sidebar_layout.setContentsMargins(12, 20, 12, 20)
         self.create_nav = QPushButton("Criar projeto")
         self.logs_nav = QPushButton("Logs")
+        self.editor_nav = QPushButton("Editores")
         sidebar_layout.addWidget(self.create_nav)
         sidebar_layout.addWidget(self.logs_nav)
+        sidebar_layout.addWidget(self.editor_nav)
         sidebar_layout.addStretch()
         root.addWidget(sidebar)
 
         self.pages = QStackedWidget()
         self.pages.addWidget(self.create_view)
         self.pages.addWidget(self.logs_view)
+        self.pages.addWidget(self.editor_view)
         root.addWidget(self.pages, 1)
         self.pages.setContentsMargins(20, 20, 20, 20)
 
         self.create_nav.clicked.connect(lambda: self.pages.setCurrentWidget(self.create_view))
         self.logs_nav.clicked.connect(lambda: self.pages.setCurrentWidget(self.logs_view))
+        self.editor_nav.clicked.connect(lambda: self.pages.setCurrentWidget(self.editor_view))
+        self.logs_view.open_editor_button.clicked.connect(self._open_editor)
+        self.editor_view.settings_changed.connect(self._update_open_button)
         self.create_view.create_requested.connect(self._create_project)
         self.create_view.cancel_requested.connect(self.runner.cancel)
         self.create_view.package_selector.search_requested.connect(self._search_packages)
@@ -137,6 +154,8 @@ class MainWindow(QMainWindow):
             return
 
         self._selected_packages = selected_names
+        self._last_completed_project = None
+        self._update_open_button()
         self._current_spec = spec
         self._current_tools = tools
         self._expected_project = expected
@@ -241,11 +260,36 @@ class MainWindow(QMainWindow):
             message = f"Projeto criado com sucesso: {self._expected_project}"
             self.create_view.show_result(message, success=True)
             self.logs_view.add_log(f"\n{message}\n")
+            self._last_completed_project = self._expected_project
+            self._update_open_button()
+            if self.editor_view.should_auto_open():
+                self._open_editor()
         self._reset_operation()
 
     def _finish_error(self, message: str) -> None:
         self._failure(message)
         self._reset_operation()
+
+    def _update_open_button(self) -> None:
+        self.logs_view.open_editor_button.setEnabled(
+            self._last_completed_project is not None
+            and self.editor_view.selected_installation() is not None
+        )
+
+    def _open_editor(self) -> None:
+        if self._last_completed_project is None:
+            return
+        editor_id = self.editor_view.selected_editor_id()
+        try:
+            self.editor_manager.open_project(editor_id, self._last_completed_project)
+        except (EditorLaunchError, ValueError) as exc:
+            # Criar um projeto continua sendo sucesso mesmo se abrir a IDE falhar.
+            self.logs_view.add_log(f"Aviso ao abrir editor: {exc}\n")
+            QMessageBox.warning(self, "Não foi possível abrir o editor", str(exc))
+        else:
+            self.logs_view.add_log(
+                f"Abrindo {EDITOR_NAMES[editor_id]}: {self._last_completed_project}\n"
+            )
 
     def _reset_operation(self) -> None:
         self.create_view.set_running(False)

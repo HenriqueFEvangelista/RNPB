@@ -1,6 +1,6 @@
 """Painel de logs baseado em Qt Widgets."""
 
-from PySide6.QtWidgets import QLabel, QPlainTextEdit, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QPlainTextEdit, QPushButton, QVBoxLayout, QWidget
 
 
 class LogsView(QWidget):
@@ -14,6 +14,9 @@ class LogsView(QWidget):
         self.log_box.setMaximumBlockCount(5000)
         layout.addWidget(title)
         layout.addWidget(self.log_box)
+        self.open_editor_button = QPushButton("Abrir projeto na IDE")
+        self.open_editor_button.setEnabled(False)
+        layout.addWidget(self.open_editor_button)
         self.add_log("RNPB iniciado.\n")
 
     def add_log(self, text: str) -> None:

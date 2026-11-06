@@ -32,6 +32,26 @@ O assistente apresenta **Projeto → Template → Bibliotecas → Revisão**. Na
 - O projeto é criado primeiro, depois as dependências-base (Vite) e, por último, as bibliotecas escolhidas. Uma falha na última etapa informa **projeto criado, configuração incompleta**, sem excluir os arquivos.
 - O RNPB valida identificadores npm, impede flags/URLs no campo de instalação e permite até **30 pacotes** por criação. Pacotes de terceiros podem executar scripts de instalação e não são auditados automaticamente.
 
+## Abrir projeto em uma IDE (issue #12)
+
+Na página **Editores**, o RNPB detecta Visual Studio Code e Android Studio por PATH,
+caminhos convencionais ou Registro do Windows (App Paths). É possível **localizar o executável
+manualmente**, remover a configuração e repetir a detecção. O editor selecionado, caminho
+manual e opção de abertura automática ficam salvos nas preferências locais do sistema via
+`QSettings` (sem alterar os arquivos do projeto).
+
+Após **geração, instalação base e bibliotecas opcionais** concluídas com sucesso,
+o RNPB pode abrir a raiz do projeto automaticamente (recurso desativado por padrão).
+A página Logs também oferece o botão **Abrir projeto na IDE**. Para Expo sem
+diretório nativo `android/`, abre a **raiz do projeto**; não executa prebuild.
+
+- Se nenhum editor for detectado, a criação continua normalmente. Use **Editores → Localizar executável…**.
+- O executável deve pertencer ao editor escolhido. Os comandos são invocados com argumentos separados, **sem shell**.
+- O Android Studio pode abrir a pasta Expo, mas isso não cria um projeto Android nativo;
+  para desenvolvimento Expo Go, o VS Code costuma ser a opção mais direta.
+- Falhas ao abrir a IDE são avisos, não cancelam nem invalidam um projeto criado.
+- Esta issue depende do assistente do PR #9; a funcionalidade é entregue em PR separado.
+
 ## Executar no Windows
 
 Pré-requisitos: **Python e Node.js (npm/npx)** instalados no PATH. A versão atual do Vite requer **Node.js 20.19+ ou 22.12+**; alguns templates podem exigir versões superiores. O aplicativo verifica a presença do Node.js, mas ainda não compara sua versão.

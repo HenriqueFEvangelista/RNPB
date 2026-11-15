@@ -138,3 +138,16 @@ def test_expo_example_wizard_usa_flag_example(tmp_path, qtbot, monkeypatch):
     assert plans
     assert plans[0].arguments[2:4] == ("--example", "with-sqlite")
     window._reset_operation()
+
+
+def test_fallback_local_visivel_quando_api_falha(qtbot):
+    view = CreateView()
+    qtbot.addWidget(view)
+    view.template_search.setText("naoexisteapi")
+    view.apply_template_results(
+        "naoexisteapi", REACT_NATIVE, JAVASCRIPT,
+        TemplateSearchResult((), "GitHub indisponível."),
+    )
+    assert "indisponível" in view.template_source_label.text()
+    assert view.template_combo.findData("blank") != -1
+    assert view.selected_template().id == "blank"

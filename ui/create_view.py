@@ -306,17 +306,20 @@ class CreateView(QWidget):
         language = self.language_combo.currentData()
         query = self.template_search.text().strip().casefold()
         local = opcoes_templates(target, language)
-        choices = (*local, *self._online_templates)
-        return tuple(
-            item for item in choices
+        filtered = tuple(
+            item for item in local
+            if not query or query in (item.id + " " + item.label + " " + item.description).casefold()
+        )
+        # Uma busca sem resultados ou com falha não pode esconder o fallback local.
+        if not filtered and not self._online_templates:
+            filtered = local
+        remote = tuple(
+            item for item in self._online_templates
             if item.target == target
             and item.language in (None, language)
-            and (
-                not query or query in (
-                    item.id + " " + item.label + " " + item.description
-                ).casefold()
-            )
+            and query in (item.id + " " + item.label + " " + item.description).casefold()
         )
+        return (*filtered, *remote)
 
     def _refresh_templates(self, *_args) -> None:
         selected = self.template_combo.currentData()

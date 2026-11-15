@@ -9,6 +9,7 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - [Requisitos](./REQUISITOS.md) — escopo, requisitos funcionais e não funcionais, critérios de aceitação e roadmap.
 - [Arquitetura técnica](./ARQUITETURA.md) — módulos, contratos, fluxos, estados e plano de migração.
 - [Documentação de APIs e integrações](./API.md) — npm Registry, React Native Directory, GitHub e ferramentas locais.
+- [ADR-0002: detecção e abertura de IDEs](./ADR/0002-abertura-de-editores.md) — integração local opcional e persistência de preferências.
 - [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão **aceita**, contexto, alternativas e consequências.
 
 ## Estado da implementação (PR #9)

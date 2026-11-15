@@ -56,6 +56,7 @@ def parse_expo_examples(payload: object) -> tuple[TemplateSpec, ...]:
             source="expo/examples",
             description=f"Exemplo oficial Expo: {name}. A linguagem é definida pelo exemplo.",
             url=canonical,
+            license="MIT",  # licença do repositório oficial expo/examples
         )
     return tuple(sorted(found.values(), key=lambda item: item.label.casefold()))
 
@@ -75,6 +76,12 @@ def parse_github_references(payload: object) -> tuple[TemplateSpec, ...]:
         if entry.get("html_url") != url:
             continue
         description = entry.get("description")
+        license_data = entry.get("license")
+        license_id = (
+            license_data.get("spdx_id", "") if isinstance(license_data, dict) else ""
+        )
+        if not isinstance(license_id, str) or license_id == "NOASSERTION":
+            license_id = ""
         found.append(TemplateSpec(
             id=f"github:{fullname}",
             label=fullname,
@@ -85,6 +92,7 @@ def parse_github_references(payload: object) -> tuple[TemplateSpec, ...]:
             description=str(description or "Template comunitário; compatibilidade não verificada.")[:220],
             url=url,
             installable=False,
+            license=license_id[:40],
         ))
         if len(found) >= 12:
             break

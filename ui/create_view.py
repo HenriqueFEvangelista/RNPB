@@ -360,6 +360,7 @@ class CreateView(QWidget):
         self.template_details.setText(
             f"Origem: {item.source} | {category}\n"
             f"Linguagem: {lang}\n"
+            f"Licença: {item.license or 'não informada'}\n"
             f"{item.description or 'Template oficial suportado pelo gerador.'}\n"
             f"{item.url}"
         )

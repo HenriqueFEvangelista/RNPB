@@ -64,7 +64,8 @@ def test_catalogo_expo_valida_origem_e_nao_executa_entradas_estranhas():
 def test_referencia_comunidade_nunca_executavel():
     data = {"items": [
         {"full_name": "dev/vite-react-starter", "html_url": "https://github.com/dev/vite-react-starter",
-         "description": "Vite React starter", "archived": False, "fork": False},
+         "description": "Vite React starter", "archived": False, "fork": False,
+         "license": {"spdx_id": "MIT"}},
         {"full_name": "evil/../repo", "html_url": "https://github.com/evil/../repo"},
         {"full_name": "dev/archived", "html_url": "https://github.com/dev/archived", "archived": True},
         {"full_name": "dev/bad", "html_url": "javascript:alert(1)"},
@@ -74,6 +75,7 @@ def test_referencia_comunidade_nunca_executavel():
     assert items[0].source == "github-community"
     assert items[0].strategy == "reference"
     assert not items[0].installable
+    assert items[0].license == "MIT"
 
 
 def test_expo_busca_e_cache_compartilhado_por_linguagem():

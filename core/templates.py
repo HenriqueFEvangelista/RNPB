@@ -21,6 +21,7 @@ class TemplateSpec:
     description: str = ""
     url: str = ""
     installable: bool = True
+    license: str = ""
 
 
 # Manter IDs alinhados com os geradores oficiais (Vite/Expo).

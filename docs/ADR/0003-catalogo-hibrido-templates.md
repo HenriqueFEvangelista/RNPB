@@ -7,7 +7,7 @@
 ## Contexto
 
 Os templates iniciais do RNPB eram oito opções codificadas diretamente em
-\`core/templates.py\`. A instalação de bibliotecas por npm/React Native Directory
+`core/templates.py`. A instalação de bibliotecas por npm/React Native Directory
 já foi incorporada no PR #9, mas não fornece uma API única para listar templates
 Vite e Expo. O objetivo é descobrir opções adicionais sem transformar um
 resultado de busca pública em comando arbitrário.
@@ -17,19 +17,19 @@ resultado de busca pública em comando arbitrário.
 Adotar um **catálogo híbrido**:
 
 1. **Presets locais verificados:** continuar listando os oito presets de
-   \`create-vite --template\` e \`create-expo-app --template\`. A interface pode
+   `create-vite --template` e `create-expo-app --template`. A interface pode
    exibi-los sem consultas HTTP.
 2. **Exemplos Expo oficiais:** consultar o endpoint fixo
-   \`GET https://api.github.com/repos/expo/examples/contents\`, aceitando somente
-   diretórios \`with-*\` na raiz com URL canônica de \`expo/examples\`. A estratégia
-   de criação é \`create-expo-app --example <id>\` com argumentos separados.
+   `GET https://api.github.com/repos/expo/examples/contents`, aceitando somente
+   diretórios `with-*` na raiz com URL canônica de `expo/examples`. A estratégia
+   de criação é `create-expo-app --example <id>` com argumentos separados.
 3. **Descoberta comunitária Vite:** usar a GitHub Search API sob demanda,
    rotular a origem como externa e **desabilitar a geração automática**. O link é
    fornecido para investigação; a pesquisa não equivale a aprovação de template.
 4. **Idioma e compatibilidade:** a linguagem de exemplos Expo é definida pelos
    arquivos do exemplo e **não pode ser garantida** pela opção JS/TS escolhida.
    Presets locais permanecem estritamente filtrados por idioma.
-5. **Desempenho:** workers \`QRunnable\` com sinais Qt, debounce de 650 ms,
+5. **Desempenho:** workers `QRunnable` com sinais Qt, debounce de 650 ms,
    timeout HTTP e cache de 600 s em memória. A busca não afeta o pipeline de
    geração, instalação opcional de bibliotecas e abertura de IDE.
 6. **Segurança:** validar slug, URL, origem e estratégia dentro do núcleo.

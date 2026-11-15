@@ -25,7 +25,7 @@ A etapa **Template** mantém as oito opções oficiais locais e permite pesquisa
 
 - **Expo:** consulta os diretórios `with-*` do repositório oficial [expo/examples](https://github.com/expo/examples) pela GitHub REST API. Um exemplo aprovado é criado com `npx create-expo-app@latest meu-app --example with-sqlite --yes`. Os exemplos podem definir **JavaScript ou TypeScript por conta própria**, independentemente da linguagem escolhida inicialmente no formulário.
 - **React Web/Vite:** consulta repositórios públicos na pesquisa do GitHub para **referência e documentação apenas**. Essas opções são identificadas como comunitárias e **não executáveis** no RNPB, mesmo que tenham "template" no nome; presets Vite oficiais locais continuam sendo os únicos geráveis.
-- Mostra origem, descrição, link GitHub e estratégia; a pesquisa usa um worker Qt com **debounce de 650 ms**, timeout e cache em memória de **10 minutos**. Sem conexão, a seleção dos templates oficiais locais permanece acessível ao limpar o filtro de pesquisa.
+- Mostra origem, descrição, licença quando conhecida, link GitHub e estratégia; a pesquisa usa um worker Qt com **debounce de 650 ms**, timeout e cache em memória de **10 minutos**. Sem conexão, a seleção dos templates oficiais locais permanece acessível ao limpar o filtro de pesquisa.
 - URLs, nomes de exemplos e estratégias passam por validação. Resultados externos **não se transformam em comandos shell ou clonagem arbitrária**. Repositórios GitHub não recebem confiança automática.
 - Consultas públicas não exigem token nem pagamento; a API do GitHub aplica limites por IP e limites adicionais a pesquisas. Os resultados online não garantem compatibilidade com a versão local do SDK nem funcionamento offline da criação.
 

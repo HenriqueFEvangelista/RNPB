@@ -6,7 +6,7 @@ import re
 import sys
 
 from core.environment import EnvironmentTools
-from core.templates import REACT_NATIVE, REACT_WEB, validar_template
+from core.templates import REACT_NATIVE, REACT_WEB, TemplateSpec, validar_template
 
 
 _NAME_PATTERN = re.compile(r"^[a-z][a-z0-9_-]{0,62}$")
@@ -23,6 +23,7 @@ class ProjectSpec:
     target: str
     language: str
     template_id: str
+    approved_template: TemplateSpec | None = None
 
 
 @dataclass(frozen=True)
@@ -72,12 +73,15 @@ def _montar_cli(comando: str, argumentos: tuple[str, ...], pasta: Path, tools: E
 
 def montar_comando(spec: ProjectSpec, tools: EnvironmentTools) -> CommandPlan:
     """Retorna o comando de geração somente para templates do catálogo validado."""
-    validar_template(spec.target, spec.language, spec.template_id)
+    approved = (spec.approved_template,) if spec.approved_template is not None else ()
+    template = validar_template(spec.target, spec.language, spec.template_id, approved)
     destino = validar_projeto(spec.name, spec.destination)
     raiz = destino.parent
 
-    if spec.target == REACT_NATIVE:
-        args = ("create-expo-app@latest", spec.name, "--template", spec.template_id, "--yes")
+    if template.strategy == "example":
+        args = ("create-expo-app@latest", spec.name, "--example", template.id, "--yes")
+    elif spec.target == REACT_NATIVE:
+        args = ("create-expo-app@latest", spec.name, "--template", template.id, "--yes")
     else:
         # create-vite é apenas o scaffold; instalação acontece em outra etapa.
         args = ("create-vite@latest", spec.name, "--template", spec.template_id, "--no-interactive")

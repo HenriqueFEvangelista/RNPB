@@ -1,7 +1,7 @@
 # Arquitetura técnica do RNPB
 
 - **Data da decisão:** 31/10/2026
-- **Status:** arquitetura-alvo **aprovada**; PRs #4 e #7 incorporados e catálogo/instalação do PR #9 em revisão.
+- **Status:** arquitetura-alvo **aprovada**; PRs #4, #7, #9 e #13 incorporados; descoberta de templates em desenvolvimento na issue #14.
 - **Decisão relacionada:** [ADR-0001](./ADR/0001-arquitetura-e-geradores.md)
 - **Escopo:** aplicativo desktop para criar projetos React web e React Native
 
@@ -23,7 +23,7 @@ O RNPB permitirá escolher **plataforma, JavaScript/TypeScript, template, destin
 | Consultas HTTP | **requests** com timeout em workers `QThreadPool/QRunnable`; atualizar GUI apenas via sinais Qt |
 | Geradores oficiais | **Vite** (React web) e **Expo** (React Native) |
 | Metadados de pacotes | npm Registry; React Native Directory para indicadores de compatibilidade |
-| Exemplos/templates de terceiros | GitHub REST API **opcional e posterior**, com curadoria e cache |
+| Exemplos/templates de terceiros | GitHub REST API **opcional**, descoberta sob demanda e bloqueio de execução arbitrária (issue #14) |
 | Configurações e cache | JSON em diretórios de usuário via `platformdirs`; catálogo curado embarcado |
 | Testes | `pytest`, `pytest-qt`, objetos falsos para APIs/processos |
 | Executável Windows | PyInstaller; Node.js/npm instalados e acessíveis externamente |
@@ -237,3 +237,15 @@ O `CreateView` inclui **QToolButton** com ícones nativos do Qt para cada etapa,
 A validação de `ProjectSpec` continua em `core/project_creator.py` e é reutilizada tanto na navegação do wizard quanto antes de emitir comandos no `MainWindow`. Validações de template e de nomes de bibliotecas permanecem no núcleo. O wizard envia erros ao campo correspondente, mostra banner visível e posiciona a página/foco; não depende de logs para mensagens ao usuário.
 
 **Política atual:** nomes de projetos começam com uma letra **minúscula** e contêm somente minúsculas, números, hífen ou sublinhado. Nomes inválidos não são corrigidos silenciosamente. A regra pode mudar num ADR futuro, mas nesta etapa apenas o feedback/navegação mudou.
+
+## 13. Descoberta híbrida e estratégias de templates (issue #14)
+
+- `core/templates.py`: mantém presets oficiais imutáveis; `TemplateSpec` inclui `strategy`, `source`, descrição, URL, idioma opcional e `installable`. `validar_template` permite somente presets locais ou exemplos oficiais Expo com origem, slug e URL canônica verificadas.
+- `core/template_catalog.py`: serviço puro (sem Qt) que consulta o repositório público `expo/examples` via GitHub Contents API e descobre referências de repositórios Vite pela GitHub Search API. Os metadados externos não são considerados confiáveis para formar comandos executáveis.
+- `ui/template_catalog_worker.py`: consulta HTTP no `QThreadPool`; `ui/create_view.py` mantém o resultado filtrado e informa origem, estratégia, idioma desconhecido e caráter não executável de referências da comunidade.
+- `core/project_creator.py`: mantém `create-vite --template` e `create-expo-app --template`; somente um `TemplateSpec` oficial e aprovado recebido pela interface permite `create-expo-app --example <slug>`. O diretório do projeto continua validado antes da execução e não há interpolação de shell.
+- Buscas têm debounce (650 ms), timeout, limite de resultados e cache de 600 s. Respostas obsoletas e falhas não travam o wizard. O cache é em memória; não é suporte a instalação offline.
+- Um repositório comunitário aparece **apenas como referência**: nenhuma opção de clonar, instalar ou executar scripts arbitrários é oferecida.
+- Testes unitários validam respostas, URL canônica, nomes seguros, cache, falha de rede e CLI; `pytest-qt` cobre o wizard e workers.
+
+**Limites reconhecidos:** não há garantia de linguagem JS/TS nos exemplos Expo, conferência automática da versão do SDK de cada exemplo, nem pesquisa de templates publicados no npm. O usuário deve revisar dependências e licenças do projeto de origem antes de uso.

@@ -1,7 +1,7 @@
 # APIs e integrações do RNPB
 
-**Versão:** proposta inicial — 31/10/2026  
-**Status:** npm Registry e React Native Directory **implementados no PR #9**, ainda em revisão. GitHub REST API permanece planejada.
+**Atualização:** 15/11/2026  
+**Status:** npm Registry e React Native Directory incorporados (PR #9). GitHub REST API para templates em implementação na issue #14.
 
 Esta documentação descreve fontes externas para descobrir bibliotecas e templates e distingue **APIs HTTP** de **ferramentas de linha de comando**. O RNPB é uma aplicação desktop; não está prevista uma API HTTP própria para o MVP.
 
@@ -16,7 +16,7 @@ Esta documentação descreve fontes externas para descobrir bibliotecas e templa
 | [Expo](https://docs.expo.dev/more/create-expo/) | Gerar e executar projetos React Native | Não aplicável à geração local | Comando local via npx |
 | [Expo Tunnel](https://docs.expo.dev/get-started/start-developing/) | Conectar Expo Go ao servidor em redes diferentes | Pode depender do serviço de túnel | Ferramenta opcional, não API REST |
 
-## 1.1 Implementação em código (PR #9)
+## 1.1 Implementação em código (PR #9 incorporado)
 
 - `core/package_catalog.py` consulta o npm Registry e React Native Directory via `requests`, com timeout e fallback parcial.
 - `core/packages.py` normaliza nome, versão, descrição, categoria e indicadores de compatibilidade.
@@ -82,7 +82,14 @@ A resposta da API de conteúdo apresenta arquivos e diretórios; o RNPB pode exi
 - Consultar cabeçalhos como `x-ratelimit-remaining` e `x-ratelimit-reset` e respeitar respostas HTTP `403`/`429`.
 - Nunca distribuir um token pessoal embutido no executável. Se autenticação individual for adicionada, requer decisão e implementação seguras específicas.
 
-**Estratégia do MVP:** consultar GitHub apenas sob demanda, preferir catálogo local curado, cache e validação de origem/licença. **Não** tornar o GitHub dependência obrigatória da criação básica.
+**Implementação da issue #14:** `core/template_catalog.py` usa `requests` com `timeout=(4, 8)` e cache em memória de 600 segundos; `ui/template_catalog_worker.py` executa fora da thread gráfica e `ui/create_view.py` faz debounce de 650 ms. Os oito presets locais permanecem em `core/templates.py`. As APIs são consultadas somente após digitar ao menos dois caracteres.
+
+- **Expo oficial:** `GET /repos/expo/examples/contents` lista diretórios `with-*` da raiz. Somente o ID sintaticamente validado e a URL canônica `expo/examples/tree/master/<id>` podem usar `--example` pelo CLI oficial.
+- **Vite/comunidade:** `GET /search/repositories?q=vite+react+template+...` retorna apenas referências, com descrição e link. Não há instalação/clonagem ou execução desses repositórios; o modelo marca `installable=False`.
+- **Linguagem de exemplos Expo:** o diretório do exemplo pode usar JS ou TS. A seleção de idioma no RNPB não converte o exemplo; os metadados deixam o idioma **não verificado**.
+- **Resiliência:** erros HTTP/403/429 retornam um aviso; não são tratados como sucesso. O usuário pode limpar o filtro para selecionar um preset local. Não há token incorporado.
+
+**Estratégia do MVP:** consultar GitHub apenas sob demanda, preferir catálogo local curado, cache e validação da origem. **Não** tornar o GitHub dependência obrigatória da seleção básica.
 
 Documentação: [Limites da GitHub REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).
 
@@ -102,6 +109,7 @@ npm create vite@latest meu-app -- --template react-ts
 ~~~bash
 npx create-expo-app@latest meu-app --template blank
 npx create-expo-app@latest meu-app --template blank-typescript
+npx create-expo-app@latest meu-app --example with-sqlite
 ~~~
 
 Outras opções do Expo, como `default` e `tabs`, devem ser expostas apenas nas combinações de linguagem suportadas pela versão do gerador.

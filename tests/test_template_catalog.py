@@ -197,3 +197,25 @@ def test_json_malformado_e_tratado():
     result = service.search("sqlite", REACT_NATIVE, TYPESCRIPT)
     assert not result.templates
     assert result.warning
+
+
+@pytest.mark.parametrize("status,headers,expected", [
+    (429, {"Retry-After": "30"}, "Aguarde 30 segundos"),
+    (403, {"X-RateLimit-Remaining": "0"}, "Limite de consultas"),
+    (403, {}, "acesso negado"),
+    (422, {}, "pesquisa não foi aceita"),
+    (502, {}, "HTTP 502"),
+])
+def test_erro_http_apresenta_status_sem_esconder_causa(status, headers, expected):
+    response = requests.Response()
+    response.status_code = status
+    response.headers.update(headers)
+
+    def error(*args, **kwargs):
+        raise requests.HTTPError(f"Error {status}", response=response)
+
+    result = TemplateCatalogService(error).search("router", REACT_WEB, JAVASCRIPT)
+    assert result.templates == ()
+    assert f"HTTP {status}" in result.warning
+    assert expected.casefold() in result.warning.casefold()
+    assert "locais" in result.warning

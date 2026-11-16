@@ -160,6 +160,10 @@ class CreateView(QWidget):
         self.template_search.setObjectName("templateSearch")
         self.template_search.setPlaceholderText("Pesquisar exemplos Expo ou templates Vite…")
         template_layout.addWidget(self.template_search)
+        self.template_search_hint = QLabel()
+        self.template_search_hint.setObjectName("muted")
+        self.template_search_hint.setWordWrap(True)
+        template_layout.addWidget(self.template_search_hint)
         self.template_combo = QComboBox()
         self.template_combo.setObjectName("templateSelection")
         template_layout.addWidget(self.template_combo)
@@ -225,6 +229,7 @@ class CreateView(QWidget):
         self.directory_input.textChanged.connect(lambda _: self._clear_field_error("directory"))
         self.template_combo.currentIndexChanged.connect(self._clear_template_error)
         self._refresh_templates()
+        self._update_template_search_hint()
 
         controls = QHBoxLayout()
         self.back_button = QPushButton("Voltar")
@@ -254,9 +259,23 @@ class CreateView(QWidget):
 
         self._refresh_navigation()
 
+    def _update_template_search_hint(self) -> None:
+        if self.platform_combo.currentData() == REACT_WEB:
+            self.template_search_hint.setText(
+                "Vite: experimente dashboard, tailwind, admin ou starter. "
+                "A busca no GitHub mostra somente referências comunitárias; "
+                "para gerar projetos, use um preset oficial local."
+            )
+        else:
+            self.template_search_hint.setText(
+                "Expo: pesquise sqlite, router, camera ou auth. "
+                "Exemplos oficiais aprovados podem ser gerados com --example."
+            )
+
     def _template_context_changed(self, *_args) -> None:
         # Nunca reutilizar resultados de outra plataforma ou linguagem.
         self._online_templates = ()
+        self._update_template_search_hint()
         self._template_timer.stop()
         self._refresh_templates()
         if len(self.template_search.text().strip()) >= 2:

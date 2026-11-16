@@ -23,6 +23,31 @@ _REPO_NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
 _HEADERS = {"Accept": "application/vnd.github+json", "User-Agent": "RNPB-TemplateCatalog"}
 
 
+def _http_error_warning(error: requests.HTTPError) -> str:
+    """Retorna status útil sem mostrar token, URL ou corpo arbitrário da API."""
+    response = error.response
+    status = response.status_code if response is not None else None
+    headers = response.headers if response is not None else {}
+    if status is None:
+        return "GitHub indisponível (falha HTTP sem status informado)."
+    if status == 429 or (status == 403 and headers.get("X-RateLimit-Remaining") == "0"):
+        detail = "Limite de consultas da API do GitHub atingido."
+        wait = headers.get("Retry-After")
+        if wait and wait.isdecimal():
+            detail += f" Aguarde {wait} segundos antes de pesquisar novamente."
+        else:
+            detail += " Aguarde até a renovação do limite antes de pesquisar novamente."
+        return f"GitHub API: HTTP {status}. {detail}"
+    if status == 403:
+        return (
+            "GitHub API: HTTP 403 (acesso negado). "
+            "Pode ser um limite secundário ou uma restrição da rede."
+        )
+    if status == 422:
+        return "GitHub API: HTTP 422. A pesquisa não foi aceita pelo GitHub."
+    return f"GitHub API: HTTP {status}. Não foi possível obter os resultados."
+
+
 @dataclass(frozen=True)
 class TemplateSearchResult:
     templates: tuple[TemplateSpec, ...]
@@ -142,6 +167,11 @@ class TemplateCatalogService:
             items = (
                 parse_expo_examples(raw) if target == REACT_NATIVE
                 else parse_github_references(raw)
+            )
+        except requests.HTTPError as error:
+            return TemplateSearchResult(
+                (), _http_error_warning(error)
+                + " Os templates oficiais locais continuam disponíveis.",
             )
         except (requests.RequestException, ValueError, TypeError) as error:
             return TemplateSearchResult(

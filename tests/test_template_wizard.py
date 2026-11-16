@@ -151,3 +151,12 @@ def test_fallback_local_visivel_quando_api_falha(qtbot):
     assert "indisponível" in view.template_source_label.text()
     assert view.template_combo.findData("blank") != -1
     assert view.selected_template().id == "blank"
+
+
+def test_busca_vite_exibe_ajuda_de_referencias(qtbot):
+    view = CreateView()
+    qtbot.addWidget(view)
+    assert "Expo:" in view.template_search_hint.text()
+    view.platform_combo.setCurrentIndex(view.platform_combo.findData(REACT_WEB))
+    assert "dashboard" in view.template_search_hint.text()
+    assert "somente referências" in view.template_search_hint.text()

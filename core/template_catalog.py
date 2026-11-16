@@ -1,0 +1,226 @@
+"""Busca segura de exemplos oficiais Expo e referências comunitárias Vite.
+
+Nenhum repositório encontrado na pesquisa vira automaticamente um comando de
+scaffold. Apenas exemplos da organização oficial Expo podem usar --example.
+"""
+
+from dataclasses import dataclass
+import re
+from threading import Lock
+from time import monotonic, time
+
+import requests
+
+from core.templates import (
+    JAVASCRIPT, TYPESCRIPT, REACT_NATIVE, REACT_WEB, TemplateSpec,
+)
+
+GITHUB_EXPO_EXAMPLES = "https://api.github.com/repos/expo/examples/contents"
+GITHUB_REPOSITORY_SEARCH = "https://api.github.com/search/repositories"
+CACHE_SECONDS = 600
+_EXAMPLE_NAME = re.compile(r"with-[a-z0-9]+(?:-[a-z0-9]+)*\Z")
+_REPO_NAME = re.compile(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+\Z")
+_HEADERS = {"Accept": "application/vnd.github+json", "User-Agent": "RNPB-TemplateCatalog"}
+
+
+def _http_error_warning(error: requests.HTTPError) -> str:
+    """Retorna status útil sem mostrar token, URL ou corpo arbitrário da API."""
+    response = error.response
+    status = response.status_code if response is not None else None
+    headers = response.headers if response is not None else {}
+    if status is None:
+        return "GitHub indisponível (falha HTTP sem status informado)."
+    if status == 429 or (status == 403 and headers.get("X-RateLimit-Remaining") == "0"):
+        detail = "Limite de consultas da API do GitHub atingido."
+        wait = headers.get("Retry-After")
+        if wait and wait.isdecimal():
+            detail += f" Aguarde {wait} segundos antes de pesquisar novamente."
+        else:
+            detail += " Aguarde até a renovação do limite antes de pesquisar novamente."
+        return f"GitHub API: HTTP {status}. {detail}"
+    if status == 403:
+        return (
+            "GitHub API: HTTP 403 (acesso negado). "
+            "Pode ser um limite secundário ou uma restrição da rede."
+        )
+    if status == 422:
+        return "GitHub API: HTTP 422. A pesquisa não foi aceita pelo GitHub."
+    return f"GitHub API: HTTP {status}. Não foi possível obter os resultados."
+
+
+@dataclass(frozen=True)
+class TemplateSearchResult:
+    templates: tuple[TemplateSpec, ...]
+    warning: str = ""
+
+
+def parse_expo_examples(payload: object) -> tuple[TemplateSpec, ...]:
+    """Usa apenas diretórios na raiz do repositório oficial expo/examples."""
+    if not isinstance(payload, list):
+        raise ValueError("Resposta do catálogo oficial Expo inválida.")
+    found: dict[str, TemplateSpec] = {}
+    for entry in payload:
+        if not isinstance(entry, dict):
+            continue
+        name = entry.get("name")
+        if not isinstance(name, str) or not _EXAMPLE_NAME.fullmatch(name):
+            continue
+        canonical = f"https://github.com/expo/examples/tree/master/{name}"
+        if (
+            entry.get("type") != "dir"
+            or entry.get("path") != name
+            or entry.get("html_url") != canonical
+        ):
+            continue
+        found[name] = TemplateSpec(
+            id=name,
+            label=name.removeprefix("with-").replace("-", " ").title() + " · Expo example",
+            target=REACT_NATIVE,
+            language=None,  # O exemplo escolhe sua própria linguagem.
+            strategy="example",
+            source="expo/examples",
+            description=f"Exemplo oficial Expo: {name}. A linguagem é definida pelo exemplo.",
+            url=canonical,
+            license="MIT",  # licença do repositório oficial expo/examples
+        )
+    return tuple(sorted(found.values(), key=lambda item: item.label.casefold()))
+
+
+def parse_github_references(payload: object) -> tuple[TemplateSpec, ...]:
+    """Repositórios comunitários são referências, nunca executáveis."""
+    if not isinstance(payload, dict) or not isinstance(payload.get("items"), list):
+        raise ValueError("Resposta da pesquisa GitHub inválida.")
+    found: list[TemplateSpec] = []
+    for entry in payload["items"][:25]:
+        if not isinstance(entry, dict) or entry.get("archived") or entry.get("fork"):
+            continue
+        fullname = entry.get("full_name")
+        if not isinstance(fullname, str) or not _REPO_NAME.fullmatch(fullname):
+            continue
+        url = f"https://github.com/{fullname}"
+        if entry.get("html_url") != url:
+            continue
+        description = entry.get("description")
+        license_data = entry.get("license")
+        license_id = (
+            license_data.get("spdx_id", "") if isinstance(license_data, dict) else ""
+        )
+        if not isinstance(license_id, str) or license_id == "NOASSERTION":
+            license_id = ""
+        found.append(TemplateSpec(
+            id=f"github:{fullname}",
+            label=fullname,
+            target=REACT_WEB,
+            language=None,
+            strategy="reference",
+            source="github-community",
+            description=str(description or "Template comunitário; compatibilidade não verificada.")[:220],
+            url=url,
+            installable=False,
+            license=license_id[:40],
+        ))
+        if len(found) >= 12:
+            break
+    return tuple(found)
+
+
+class TemplateCatalogService:
+    def __init__(self, http_get=None, clock=monotonic, wall_clock=time):
+        self._get = http_get or requests.get
+        self._clock = clock
+        self._wall_clock = wall_clock
+        self._cache: dict[str, tuple[float, tuple[TemplateSpec, ...]]] = {}
+        self._cooldowns: dict[str, tuple[float, str]] = {}
+        self._lock = Lock()
+
+    def _pause_after_limit(self, scope: str, error: requests.HTTPError) -> None:
+        """Respeita limites primários/ secundários sem repetir requisições negadas."""
+        response = error.response
+        if response is None:
+            return
+        status = response.status_code
+        remaining = response.headers.get("X-RateLimit-Remaining")
+        if status != 429 and not (status == 403 and remaining == "0"):
+            return
+        seconds = 60
+        retry = response.headers.get("Retry-After", "")
+        reset = response.headers.get("X-RateLimit-Reset", "")
+        if retry.isdecimal():
+            seconds = int(retry)
+        elif reset.isdecimal():
+            seconds = max(1, int(reset) - self._wall_clock())
+        seconds = max(1, min(int(seconds), 3600))
+        warning = _http_error_warning(error)
+        with self._lock:
+            self._cooldowns[scope] = (self._clock() + seconds, warning)
+
+    def search(self, text: str, target: str, language: str) -> TemplateSearchResult:
+        query = text.strip()
+        if target not in (REACT_NATIVE, REACT_WEB) or language not in (JAVASCRIPT, TYPESCRIPT):
+            raise ValueError("Plataforma ou linguagem inválida.")
+        if len(query) > 100:
+            raise ValueError("A pesquisa deve ter no máximo 100 caracteres.")
+        if len(query) < 2:
+            return TemplateSearchResult(())
+
+        # O catálogo Expo é listado inteiro pela API, portanto é compartilhado
+        # entre buscas e linguagens e filtrado localmente.
+        key = "expo/examples" if target == REACT_NATIVE else f"vite:{query.casefold()}"
+        scope = "contents" if target == REACT_NATIVE else "search"
+        with self._lock:
+            cached = self._cache.get(key)
+            if cached and self._clock() - cached[0] < CACHE_SECONDS:
+                return TemplateSearchResult(self._filter(cached[1], query, target))
+            pause = self._cooldowns.get(scope)
+            if pause and self._clock() < pause[0]:
+                remaining = max(1, int(pause[0] - self._clock()))
+                return TemplateSearchResult(
+                    (), f"{pause[1]} Nova consulta liberada em cerca de {remaining} segundos. "
+                    "Os templates oficiais locais continuam disponíveis.",
+                )
+
+        try:
+            if target == REACT_NATIVE:
+                response = self._get(
+                    GITHUB_EXPO_EXAMPLES, headers=_HEADERS, timeout=(4, 8),
+                )
+            else:
+                response = self._get(
+                    GITHUB_REPOSITORY_SEARCH,
+                    params={
+                        "q": f"vite react template {query} in:name,description",
+                        "per_page": 15,
+                    },
+                    headers=_HEADERS, timeout=(4, 8),
+                )
+            response.raise_for_status()
+            raw = response.json()
+            items = (
+                parse_expo_examples(raw) if target == REACT_NATIVE
+                else parse_github_references(raw)
+            )
+        except requests.HTTPError as error:
+            self._pause_after_limit(scope, error)
+            return TemplateSearchResult(
+                (), _http_error_warning(error)
+                + " Os templates oficiais locais continuam disponíveis.",
+            )
+        except (requests.RequestException, ValueError, TypeError) as error:
+            return TemplateSearchResult(
+                (), f"Catálogo online indisponível ({type(error).__name__}). "
+                    "Os templates oficiais locais continuam disponíveis.",
+            )
+
+        with self._lock:
+            self._cache[key] = (self._clock(), items)
+        return TemplateSearchResult(self._filter(items, query, target))
+
+    @staticmethod
+    def _filter(
+        items: tuple[TemplateSpec, ...], query: str, target: str,
+    ) -> tuple[TemplateSpec, ...]:
+        q = query.casefold()
+        return tuple(
+            item for item in items if item.target == target
+            and q in (item.id + " " + item.label + " " + item.description).casefold()
+        )[:40]

@@ -9,14 +9,15 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - [Requisitos](./REQUISITOS.md) — escopo, requisitos funcionais e não funcionais, critérios de aceitação e roadmap.
 - [Arquitetura técnica](./ARQUITETURA.md) — módulos, contratos, fluxos, estados e plano de migração.
 - [Documentação de APIs e integrações](./API.md) — npm Registry, React Native Directory, GitHub e ferramentas locais.
-- [ADR-0002: detecção e abertura de IDEs](./ADR/0002-abertura-de-editores.md) — integração local opcional e persistência de preferências.
+- [ADR-0002: detecção e abertura de IDEs](./ADR/0002-abertura-de-editores.md)
+- [ADR-0003: catálogo híbrido e seguro de templates](./ADR/0003-catalogo-hibrido-templates.md) — integração local opcional e persistência de preferências.
 - [ADR-0001: arquitetura e estratégia de geração](./ADR/0001-arquitetura-e-geradores.md) — decisão **aceita**, contexto, alternativas e consequências.
 
-## Estado da implementação (PR #9)
+## Estado da implementação (15/11/2026)
 
 **Implementado e integrado à `main`:** PySide6/QProcess (PR #4); React Web/Vite, Expo, JS/TS e templates oficiais (PR #7).
 
-**Na branch do PR #9, ainda em revisão:**
+**Incorporado à `main` pelo PR #9:**
 - Assistente com etapas **Projeto → Template → Bibliotecas → Revisão**.
 - Catálogo local de sugestões + busca npm Registry e React Native Directory.
 - Workers Qt, debounce, timeout, cache em memória e fallback em caso de API indisponível.
@@ -24,7 +25,11 @@ O **RNPB (React Native Project Builder)** nasceu como um aplicativo desktop em P
 - Indicadores de compatibilidade Expo Go que distinguem confirmado, incompatível e não verificado.
 - Testes unitários e de interface para consultas, instalação e falha parcial.
 
-**Ainda planejado:** página de projetos existentes, cache persistente, GitHub API para templates externos, Expo Tunnel, atualização/remoção de pacotes e verificação final do executável no Windows.
+**Incorporado à `main` pelo PR #13:** detecção de VS Code/Android Studio e abertura opcional do projeto na IDE.
+
+**Em implementação (issue #14):** catálogo oficial local + descoberta de exemplos Expo via GitHub, referências comunitárias Vite não executáveis, validação do uso de `--example`, cache e workers Qt.
+
+**Ainda planejado:** página de projetos existentes, cache persistente, importação segura de templates externos, Expo Tunnel, atualização/remoção de pacotes e verificação do executável no Windows.
 
 ## Princípios
 

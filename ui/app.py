@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
 from core.editor_manager import EDITOR_NAMES, EditorLaunchError, EditorManager
 from core.environment import EnvironmentTools, verificar_ambiente
 from core.package_catalog import CatalogService
+from core.template_catalog import TemplateCatalogService, TemplateSearchResult
 from core.package_installer import montar_instalacao_bibliotecas, pacotes_instalados
 from core.packages import validate_package_names
 from core.process_runner import ProcessRunner
@@ -22,6 +23,7 @@ from core.project_creator import (
 )
 from core.templates import REACT_WEB
 from ui.catalog_worker import CatalogWorker
+from ui.template_catalog_worker import TemplateCatalogWorker
 from ui.create_view import CreateView
 from ui.editor_settings import EditorSettingsView
 from ui.logs_view import LogsView
@@ -53,10 +55,13 @@ class MainWindow(QMainWindow):
         self.editor_view = EditorSettingsView(self.editor_manager, self.settings)
 
         self.catalog = CatalogService()
+        self.template_catalog = TemplateCatalogService()
         self._pool = QThreadPool(self)
         self._pool.setMaxThreadCount(2)
         self._search_seq = 0
         self._workers: dict[int, CatalogWorker] = {}
+        self._template_search_seq = 0
+        self._template_workers: dict[int, TemplateCatalogWorker] = {}
 
         container = QWidget()
         self.setCentralWidget(container)
@@ -92,6 +97,7 @@ class MainWindow(QMainWindow):
         self.create_view.create_requested.connect(self._create_project)
         self.create_view.cancel_requested.connect(self.runner.cancel)
         self.create_view.package_selector.search_requested.connect(self._search_packages)
+        self.create_view.template_search_requested.connect(self._search_templates)
         self.runner.output.connect(self.logs_view.add_log)
         self.runner.started.connect(self._process_started)
         self.runner.completed.connect(self._process_completed)
@@ -120,13 +126,57 @@ class MainWindow(QMainWindow):
                 query, target, CatalogResult((), f"Busca indisponível: {error}")
             )
 
+    def _search_templates(self, query: str, target: str, language: str) -> None:
+        if self._stage is not None:
+            return
+        self._template_search_seq += 1
+        seq = self._template_search_seq
+        worker = TemplateCatalogWorker(
+            seq, query, target, language, self.template_catalog
+        )
+        self._template_workers[seq] = worker
+        worker.signals.finished.connect(self._templates_finished)
+        worker.signals.failed.connect(self._templates_failed)
+        self._pool.start(worker)
+
+    def _templates_finished(
+        self, seq: int, query: str, target: str, language: str, result
+    ) -> None:
+        self._template_workers.pop(seq, None)
+        if seq == self._template_search_seq and self._stage is None:
+            self.create_view.apply_template_results(query, target, language, result)
+
+    def _templates_failed(
+        self, seq: int, query: str, target: str, language: str, error: str
+    ) -> None:
+        self._template_workers.pop(seq, None)
+        if seq == self._template_search_seq and self._stage is None:
+            self.create_view.apply_template_results(
+                query, target, language,
+                TemplateSearchResult((), f"Busca de templates indisponível: {error}"),
+            )
+
     def _create_project(
         self, name: str, destination: str, target: str, language: str, template_id: str,
         packages=(),
     ) -> None:
         if self.runner.is_running or self._stage is not None:
             return
-        spec = ProjectSpec(name, destination, target, language, template_id)
+        # Somente templates efetivamente escolhidos na interface recebem
+        # autorização para --example. Chamadas diretas continuam com whitelist local.
+        approved = None
+        try:
+            selected = self.create_view.selected_template()
+            if (
+                selected.id == template_id
+                and selected.target == target
+                and selected.language in (None, language)
+                and selected.strategy == "example"
+            ):
+                approved = selected
+        except ValueError:
+            pass
+        spec = ProjectSpec(name, destination, target, language, template_id, approved)
         try:
             validar_nome_projeto(name)
         except ValueError as error:

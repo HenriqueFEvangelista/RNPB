@@ -2,7 +2,7 @@
 
 O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar projetos **React Web (Vite)** e **React Native (Expo)** por uma interface gráfica.
 
-> 🚧 **Em desenvolvimento.** O PR #9 acrescenta um assistente com quatro etapas e seleção opcional de bibliotecas durante a criação. O gerenciamento de pacotes em projetos existentes, Expo Tunnel e atualização/remoção de bibliotecas permanecem para entregas futuras.
+> 🚧 **Em desenvolvimento.** As bibliotecas e o EditorManager já foram incorporados à `main` (PRs #9 e #13). O catálogo dinâmico de templates está sendo desenvolvido na issue #14. Gerenciamento de projetos existentes e Expo Tunnel permanecem para entregas futuras.
 
 ## Recursos disponíveis
 
@@ -18,6 +18,19 @@ O **RNPB** é um aplicativo desktop em **Python + PySide6** para criar projetos 
 - Validação de nome/diretório sem sobrescrever projeto, detecção de Node.js/npm/npx.
 - Processos assíncronos com `QProcess`, logs em tempo real, cancelamento e tratamento de falhas.
 - O sucesso depende do código de saída e da presença de `package.json`; para Vite, valida a instalação de `node_modules`.
+
+## Descoberta de templates — issue #14
+
+A etapa **Template** mantém as oito opções oficiais locais e permite pesquisar online:
+
+- **Expo:** consulta os diretórios `with-*` do repositório oficial [expo/examples](https://github.com/expo/examples) pela GitHub REST API. Um exemplo aprovado é criado com `npx create-expo-app@latest meu-app --example with-sqlite --yes`. Os exemplos podem definir **JavaScript ou TypeScript por conta própria**, independentemente da linguagem escolhida inicialmente no formulário.
+- **React Web/Vite:** consulta repositórios públicos na pesquisa do GitHub para **referência e documentação apenas**. Essas opções são identificadas como comunitárias e **não executáveis** no RNPB, mesmo que tenham "template" no nome; presets Vite oficiais locais continuam sendo os únicos geráveis.
+- Mostra origem, descrição, licença quando conhecida, link GitHub e estratégia. A busca **Expo** usa debounce de 650 ms; a pesquisa **Vite** exige clicar em **Pesquisar no GitHub** ou pressionar Enter para evitar esgotar o limite de requisições. Workers Qt, timeout e cache de 10 minutos mantêm a interface responsiva.
+- Ao receber HTTP 403/429 por limite, o serviço pausa novas consultas ao respectivo endpoint até a janela estimada de liberação, respeitando `Retry-After`/`X-RateLimit-Reset` quando informados. Os templates oficiais locais continuam acessíveis.
+- URLs, nomes de exemplos e estratégias passam por validação. Resultados externos **não se transformam em comandos shell ou clonagem arbitrária**. Repositórios GitHub não recebem confiança automática.
+- Consultas públicas não exigem token nem pagamento; a API do GitHub aplica limites por IP e limites adicionais a pesquisas. Os resultados online não garantem compatibilidade com a versão local do SDK nem funcionamento offline da criação.
+
+**Limitação atual:** não há instalação automática de repositórios comunitários ou busca por templates npm nesta etapa; versões do Expo e dependências do exemplo podem mudar. O próprio `create-expo-app --example` pode consultar a GitHub API e falhar com HTTP 403 quando o limite do GitHub estiver esgotado. Nesse caso, aguarde a renovação do limite e repita a geração. O smoke test real de exemplos Expo está em um workflow **manual** (`Actions → Expo official example smoke`), pois sua dependência da quota anônima do GitHub tornaria a CI padrão instável.
 
 ## Bibliotecas durante a criação (PR #9)
 
@@ -50,7 +63,7 @@ diretório nativo `android/`, abre a **raiz do projeto**; não executa prebuild.
 - O Android Studio pode abrir a pasta Expo, mas isso não cria um projeto Android nativo;
   para desenvolvimento Expo Go, o VS Code costuma ser a opção mais direta.
 - Falhas ao abrir a IDE são avisos, não cancelam nem invalidam um projeto criado.
-- Esta issue depende do assistente do PR #9; a funcionalidade é entregue em PR separado.
+- A implementação já foi incorporada à `main` pelo PR #13.
 
 ## Executar no Windows
 
@@ -92,4 +105,5 @@ O empacotamento não inclui Node.js/npm.
 - [Arquitetura](docs/ARQUITETURA.md)
 - [Requisitos](docs/REQUISITOS.md)
 - [ADR-0001](docs/ADR/0001-arquitetura-e-geradores.md)
+- [ADR-0003: catálogo seguro de templates](docs/ADR/0003-catalogo-hibrido-templates.md)
 - [APIs e integrações](docs/API.md)

@@ -2,6 +2,9 @@
 
 from pathlib import Path
 
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtCore import QUrl
+
 from PySide6.QtCore import Qt, QSize, QTimer, Signal
 from PySide6.QtWidgets import (
     QComboBox, QFileDialog, QFormLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -12,8 +15,8 @@ from PySide6.QtWidgets import (
 from core.packages import validate_package_names
 from core.project_creator import validar_nome_projeto, validar_projeto
 from core.templates import (
-    JAVASCRIPT, TYPESCRIPT, REACT_NATIVE, REACT_WEB, opcoes_templates,
-    validar_template,
+    JAVASCRIPT, TYPESCRIPT, REACT_NATIVE, REACT_WEB, TemplateSpec,
+    opcoes_templates, validar_template,
 )
 from ui.package_selector import PackageSelector
 
@@ -30,11 +33,13 @@ STEP_ICONS = (
 class CreateView(QWidget):
     create_requested = Signal(str, str, str, str, str, object)
     cancel_requested = Signal()
+    template_search_requested = Signal(str, str, str)
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent)
         self._running = False
         self._last_invalid_field = ""
+        self._online_templates: tuple[TemplateSpec, ...] = ()
 
         layout = QVBoxLayout(self)
         layout.setSpacing(12)
@@ -150,10 +155,42 @@ class CreateView(QWidget):
         # Etapa 2: templates dependem da combinação selecionada.
         template_page = QWidget()
         template_layout = QVBoxLayout(template_page)
-        template_layout.addWidget(QLabel("Selecione um template oficial"))
+        template_layout.addWidget(QLabel("Selecione um template ou exemplo"))
+        self.template_search = QLineEdit()
+        self.template_search.setObjectName("templateSearch")
+        self.template_search.setPlaceholderText("Pesquisar exemplos Expo ou templates Vite…")
+        template_layout.addWidget(self.template_search)
+        self.template_search_button = QPushButton("Pesquisar no GitHub")
+        self.template_search_button.setObjectName("templateSearchButton")
+        self.template_search_button.clicked.connect(self._dispatch_template_search)
+        self.template_search.returnPressed.connect(self._dispatch_template_search)
+        template_layout.addWidget(self.template_search_button)
+        self.template_search_hint = QLabel()
+        self.template_search_hint.setObjectName("muted")
+        self.template_search_hint.setWordWrap(True)
+        template_layout.addWidget(self.template_search_hint)
         self.template_combo = QComboBox()
+        self.template_combo.setObjectName("templateSelection")
         template_layout.addWidget(self.template_combo)
-        template_note = QLabel("Somente opções compatíveis com plataforma e linguagem selecionadas.")
+        self.template_source_label = QLabel(
+            "Templates oficiais locais. Digite 2 caracteres para pesquisar online."
+        )
+        self.template_source_label.setObjectName("muted")
+        self.template_source_label.setTextFormat(Qt.TextFormat.PlainText)
+        self.template_source_label.setWordWrap(True)
+        template_layout.addWidget(self.template_source_label)
+        self.template_details = QLabel()
+        self.template_details.setObjectName("muted")
+        self.template_details.setTextFormat(Qt.TextFormat.PlainText)
+        self.template_details.setWordWrap(True)
+        template_layout.addWidget(self.template_details)
+        self.template_open_button = QPushButton("Ver fonte no GitHub")
+        self.template_open_button.clicked.connect(self._open_template_source)
+        template_layout.addWidget(self.template_open_button)
+        template_note = QLabel(
+            "Exemplos Expo oficiais usam --example e podem definir a própria linguagem. "
+            "Resultados comunitários Vite são apenas referências: não são executados automaticamente."
+        )
         template_note.setWordWrap(True)
         template_note.setObjectName("muted")
         template_layout.addWidget(template_note)
@@ -185,12 +222,20 @@ class CreateView(QWidget):
         review_layout.addStretch()
         self.steps.addWidget(review_page)
 
-        self.platform_combo.currentIndexChanged.connect(self._refresh_templates)
-        self.language_combo.currentIndexChanged.connect(self._refresh_templates)
+        self._template_timer = QTimer(self)
+        self._template_timer.setSingleShot(True)
+        self._template_timer.setInterval(650)
+        self._template_timer.timeout.connect(self._dispatch_template_search)
+        self.platform_combo.currentIndexChanged.connect(self._template_context_changed)
+        self.language_combo.currentIndexChanged.connect(self._template_context_changed)
+        self.template_search.textChanged.connect(self._template_search_changed)
+        self.template_combo.currentIndexChanged.connect(self._show_template_details)
         self.name_input.textChanged.connect(lambda _: self._clear_field_error("name"))
         self.directory_input.textChanged.connect(lambda _: self._clear_field_error("directory"))
         self.template_combo.currentIndexChanged.connect(self._clear_template_error)
         self._refresh_templates()
+        self._update_template_search_hint()
+        self._update_template_search_button()
 
         controls = QHBoxLayout()
         self.back_button = QPushButton("Voltar")
@@ -220,16 +265,161 @@ class CreateView(QWidget):
 
         self._refresh_navigation()
 
+    def _update_template_search_button(self) -> None:
+        is_web = self.platform_combo.currentData() == REACT_WEB
+        self.template_search_button.setVisible(is_web)
+        self.template_search_button.setEnabled(
+            is_web and len(self.template_search.text().strip()) >= 2 and not self._running
+        )
+
+    def _update_template_search_hint(self) -> None:
+        if self.platform_combo.currentData() == REACT_WEB:
+            self.template_search_hint.setText(
+                "Vite: experimente dashboard, tailwind, admin ou starter. "
+                "Clique em Pesquisar no GitHub para procurar referências comunitárias "
+                "(não instaláveis). Para gerar projetos, use um preset oficial local."
+            )
+        else:
+            self.template_search_hint.setText(
+                "Expo: pesquise sqlite, router, camera ou auth. "
+                "Exemplos oficiais aprovados podem ser gerados com --example."
+            )
+
+    def _template_context_changed(self, *_args) -> None:
+        # Nunca reutilizar resultados de outra plataforma ou linguagem.
+        self._online_templates = ()
+        self._update_template_search_hint()
+        self._template_timer.stop()
+        self._refresh_templates()
+        self._update_template_search_button()
+        if len(self.template_search.text().strip()) >= 2:
+            if self.platform_combo.currentData() == REACT_NATIVE:
+                self.template_source_label.setText("Pesquisando exemplos Expo…")
+                self._template_timer.start()
+            else:
+                self.template_source_label.setText(
+                    "Clique em Pesquisar no GitHub para consultar referências Vite."
+                )
+
+    def _template_search_changed(self, *_args) -> None:
+        self._template_timer.stop()
+        self._online_templates = ()
+        self._refresh_templates()
+        self._update_template_search_button()
+        if len(self.template_search.text().strip()) >= 2:
+            if self.platform_combo.currentData() == REACT_NATIVE:
+                self.template_source_label.setText("Pesquisando exemplos Expo…")
+                self._template_timer.start()
+            else:
+                self.template_source_label.setText(
+                    "Clique em Pesquisar no GitHub para consultar referências Vite."
+                )
+        else:
+            self.template_source_label.setText(
+                "Templates oficiais locais. Digite 2 caracteres para pesquisar online."
+            )
+
+    def _dispatch_template_search(self) -> None:
+        query = self.template_search.text().strip()
+        if len(query) >= 2:
+            self.template_source_label.setText("Consultando GitHub…")
+            self.template_search_requested.emit(
+                query, self.platform_combo.currentData(), self.language_combo.currentData()
+            )
+
+    def apply_template_results(self, query: str, target: str, language: str, result) -> None:
+        if (
+            query != self.template_search.text().strip()
+            or target != self.platform_combo.currentData()
+            or language != self.language_combo.currentData()
+        ):
+            return
+        self._online_templates = result.templates
+        self._refresh_templates()
+        if result.warning:
+            text = result.warning
+        elif result.templates:
+            text = f"{len(result.templates)} resultado(s) online. Fonte e estratégia abaixo."
+        else:
+            text = "Nenhum resultado online. Templates oficiais locais continuam disponíveis."
+        if target == REACT_WEB and result.templates:
+            text += " Repositórios comunitários são somente referências."
+        self.template_source_label.setText(text)
+
+    def _all_visible_templates(self) -> tuple[TemplateSpec, ...]:
+        target = self.platform_combo.currentData()
+        language = self.language_combo.currentData()
+        query = self.template_search.text().strip().casefold()
+        local = opcoes_templates(target, language)
+        filtered = tuple(
+            item for item in local
+            if not query or query in (item.id + " " + item.label + " " + item.description).casefold()
+        )
+        # Uma busca sem resultados ou com falha não pode esconder o fallback local.
+        if not filtered and not self._online_templates:
+            filtered = local
+        remote = tuple(
+            item for item in self._online_templates
+            if item.target == target
+            and item.language in (None, language)
+            and query in (item.id + " " + item.label + " " + item.description).casefold()
+        )
+        return (*filtered, *remote)
+
     def _refresh_templates(self, *_args) -> None:
         selected = self.template_combo.currentData()
+        self.template_combo.blockSignals(True)
         self.template_combo.clear()
-        options = opcoes_templates(self.platform_combo.currentData(), self.language_combo.currentData())
-        for item in options:
-            self.template_combo.addItem(item.label, item.id)
+        for item in self._all_visible_templates():
+            suffix = " · referência (não instalável)" if not item.installable else ""
+            self.template_combo.addItem(item.label + suffix, item.id)
         ids = [self.template_combo.itemData(i) for i in range(self.template_combo.count())]
         if selected in ids:
             self.template_combo.setCurrentIndex(ids.index(selected))
+        self.template_combo.blockSignals(False)
+        self._show_template_details()
         self.package_selector.set_target(self.platform_combo.currentData())
+
+    def _selected_template_metadata(self) -> TemplateSpec | None:
+        template_id = self.template_combo.currentData()
+        return next(
+            (item for item in self._all_visible_templates() if item.id == template_id),
+            None,
+        )
+
+    def selected_template(self) -> TemplateSpec:
+        return validar_template(
+            self.platform_combo.currentData(), self.language_combo.currentData(),
+            self.template_combo.currentData(), self._online_templates,
+        )
+
+    def _show_template_details(self, *_args) -> None:
+        item = self._selected_template_metadata()
+        if item is None:
+            self.template_details.setText("Nenhum template selecionado.")
+            self.template_open_button.setEnabled(False)
+            return
+        category = (
+            "Exemplo oficial Expo" if item.strategy == "example"
+            else "Referência comunitária — não instalável" if not item.installable
+            else "Preset oficial"
+        )
+        lang = "definida pelo autor do exemplo (não filtrável)" if item.language is None else item.language
+        self.template_details.setText(
+            f"Origem: {item.source} | {category}\n"
+            f"Linguagem: {lang}\n"
+            f"Licença: {item.license or 'não informada'}\n"
+            f"{item.description or 'Template oficial suportado pelo gerador.'}\n"
+            f"{item.url}"
+        )
+        self.template_open_button.setEnabled(
+            bool(item.url and item.url.startswith("https://github.com/"))
+        )
+
+    def _open_template_source(self) -> None:
+        item = self._selected_template_metadata()
+        if item is not None and item.url.startswith("https://github.com/"):
+            QDesktopServices.openUrl(QUrl(item.url))
 
     @staticmethod
     def _style_state(widget: QWidget, value: bool) -> None:
@@ -319,11 +509,7 @@ class CreateView(QWidget):
 
     def _validate_template(self) -> bool:
         try:
-            validar_template(
-                self.platform_combo.currentData(),
-                self.language_combo.currentData(),
-                self.template_combo.currentData(),
-            )
+            self.selected_template()
         except ValueError as error:
             self.show_validation_error(str(error), 1, "template")
             return False
@@ -400,7 +586,9 @@ class CreateView(QWidget):
             f"Destino: {self.directory_input.text()}\n"
             f"Plataforma: {self.platform_combo.currentText()}\n"
             f"Linguagem: {self.language_combo.currentText()}\n"
-            f"Template: {self.template_combo.currentData()}\n\n"
+            f"Template: {self.template_combo.currentData()}"
+            f" ({'Expo example' if (self._selected_template_metadata() and self._selected_template_metadata().strategy == 'example') else 'preset oficial'})\n"
+            f"Linguagem de exemplos: definida pelo autor, quando aplicável\n\n"
             f"Bibliotecas: {description}\n"
             f"Instalação opcional: {command}\n"
             f"Compatibilidade Expo Go: {compat}\n\n"
@@ -427,6 +615,7 @@ class CreateView(QWidget):
 
     def set_running(self, running: bool) -> None:
         self._running = running
+        self._update_template_search_button()
         self.steps.setEnabled(not running)
         self.back_button.setEnabled(not running)
         self.next_button.setEnabled(not running)

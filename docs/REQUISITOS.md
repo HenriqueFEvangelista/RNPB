@@ -11,7 +11,7 @@ Público-alvo: estudantes, iniciantes e desenvolvedores que desejam automatizar 
 
 ## 2. Estado atual e evolução
 
-A arquitetura **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi aprovada no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). O PR #4 migrou a interface e a execução do Expo, incorporado à `main`; o PR #7 implementou React Web (Vite), JS/TS e templates oficiais e já foi incorporado à `main`. O PR #9 implementa a seleção e instalação opcional de bibliotecas durante a criação e ainda está em revisão.
+A arquitetura **Python + PySide6 (Qt Widgets/QSS) + QProcess** foi aprovada no [ADR-0001](./ADR/0001-arquitetura-e-geradores.md). O PR #4 migrou a interface e a execução do Expo, incorporado à `main`; o PR #7 implementou React Web (Vite), JS/TS e templates oficiais e já foi incorporado à `main`. Os PRs #9 (bibliotecas) e #13 (EditorManager) foram incorporados à `main`. A issue #14 desenvolve a descoberta dinâmica de templates.
 
 As regras de templates, catálogo de pacotes, integração HTTP e planos de instalação ficam em `core/`; `ui/` apresenta o wizard, executa as buscas em workers Qt e orquestra geração e instalação. A organização modular completa de [ARQUITETURA.md](./ARQUITETURA.md) permanece uma evolução incremental.
 
@@ -31,9 +31,9 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 | RF-10 | Selecionar bibliotecas e ferramentas opcionais, instalar com o gerenciador apropriado e apresentar o resultado individual. | Alta | Parcial no PR #9: instalação de pacotes na criação e resultado da etapa; ferramentas e gerenciamento posterior pendentes |
 | RF-11 | Executar Expo em modo LAN ou Tunnel (`@expo/ngrok` opcional), exibindo instruções/QR Code quando disponível. | Média | Planejado |
 | RF-12 | Exibir logs em tempo real, status, falhas reais, resultado e permitir cancelamento seguro. | Alta | Parcial |
-| RF-13 | Detectar VS Code e Android Studio, configurar preferência e abrir o projeto após criação concluída. | Média | Implementado na branch da issue #12; depende do PR #9 |
-| RF-14 | Disponibilizar catálogo local e cache para o funcionamento básico quando APIs estiverem indisponíveis. | Alta | Planejado |
-| RF-15 | Consultar exemplos/templates de terceiros via GitHub, com origem, licença e riscos explicitados. | Baixa | Futuro |
+| RF-13 | Detectar VS Code e Android Studio, configurar preferência e abrir o projeto após criação concluída. | Média | Implementado e incorporado no PR #13 |
+| RF-14 | Disponibilizar catálogo local e cache para o funcionamento básico quando APIs estiverem indisponíveis. | Alta | Catálogo local e cache em memória no PR #9; descoberta adicional na issue #14 |
+| RF-15 | Consultar exemplos/templates de terceiros via GitHub, com origem, licença e riscos explicitados. | Baixa | Em desenvolvimento na issue #14: origem e riscos; informações de licença quando fornecidas; comunidade só como referência |
 
 **Observações de compatibilidade:** os templates oficiais do Expo têm combinações próprias de linguagem; nem todo template está disponível em JavaScript. Pacotes React web não devem ser apresentados automaticamente como compatíveis com React Native. Os dados externos são indicativos e precisam de validação.
 
@@ -86,7 +86,7 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 
 **Fase 2 — Catálogo e configuração:** PR #9 implementa busca npm Registry + React Native Directory, catálogo local, filtros básicos e instalação opcional durante a criação, com cache em memória. Página de projetos existentes, cache persistente e filtros adicionais seguem pendentes.
 
-**Fase 3 — Experiência de desenvolvimento:** alternar Expo LAN/Tunnel, verificar/instalar `@expo/ngrok` com consentimento, abrir projeto no editor e melhorar diagnóstico.
+**Fase 3 — Experiência de desenvolvimento:** abertura no editor incorporada pelo PR #13; Expo LAN/Tunnel, `@expo/ngrok` e diagnóstico avançado permanecem pendentes.
 
 **Fase 4 — Expansões:** GitHub para templates adicionais previamente avaliados, gerenciamento de projetos existentes, novos gerenciadores de pacotes, histórico e templates personalizados.
 
@@ -105,3 +105,12 @@ As regras de templates, catálogo de pacotes, integração HTTP e planos de inst
 - Estratégia de distribuição/atualização do executável.
 
 Ver também [ARQUITETURA.md](./ARQUITETURA.md), [API.md](./API.md) e [ADR-0001](./ADR/0001-arquitetura-e-geradores.md).
+
+### Catálogo híbrido de templates (issue #14)
+
+- Mostrar presets oficiais Vite/Expo locais independentemente do status da GitHub API.
+- Consultar exemplos oficiais Expo `with-*` e usar `create-expo-app --example` somente para entradas verificadas do catálogo oficial.
+- Pesquisar projetos comunitários Vite somente como **referências não executáveis**, com fonte e documentação visíveis. Não permitir comando arbitrário, clonagem ou execução de script de template de terceiros.
+- Tratar idioma de exemplos Expo como **definido pelo próprio exemplo**, não como garantia de JavaScript/TypeScript da seleção do wizard.
+- Usar workers Qt, cache e timeout; falhas e rate limits mostram aviso, preservando a criação de projetos locais.
+- Não exigir token pessoal de GitHub; autenticação futura e importação de templates externos requerem revisão de segurança.

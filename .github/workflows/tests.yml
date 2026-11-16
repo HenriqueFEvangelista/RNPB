@@ -56,3 +56,4 @@ jobs:
           npx --yes create-expo-app@latest expo-smoke --template blank-typescript --yes --no-install
           test -f expo-smoke/package.json
           test -f expo-smoke/tsconfig.json
+

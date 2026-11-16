@@ -30,7 +30,7 @@ A etapa **Template** mantém as oito opções oficiais locais e permite pesquisa
 - URLs, nomes de exemplos e estratégias passam por validação. Resultados externos **não se transformam em comandos shell ou clonagem arbitrária**. Repositórios GitHub não recebem confiança automática.
 - Consultas públicas não exigem token nem pagamento; a API do GitHub aplica limites por IP e limites adicionais a pesquisas. Os resultados online não garantem compatibilidade com a versão local do SDK nem funcionamento offline da criação.
 
-**Limitação atual:** não há instalação automática de repositórios comunitários ou busca por templates npm nesta etapa; versões do Expo e dependências do exemplo podem mudar.
+**Limitação atual:** não há instalação automática de repositórios comunitários ou busca por templates npm nesta etapa; versões do Expo e dependências do exemplo podem mudar. O próprio `create-expo-app --example` pode consultar a GitHub API e falhar com HTTP 403 quando o limite do GitHub estiver esgotado. Nesse caso, aguarde a renovação do limite e repita a geração. O smoke test real de exemplos Expo está em um workflow **manual** (`Actions → Expo official example smoke`), pois sua dependência da quota anônima do GitHub tornaria a CI padrão instável.
 
 ## Bibliotecas durante a criação (PR #9)
 

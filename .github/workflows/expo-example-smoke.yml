@@ -1,0 +1,18 @@
+name: Expo official example smoke (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  expo-example-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Generate official Expo example
+        run: |
+          npx --yes create-expo-app@latest expo-example-smoke --example with-sqlite --yes --no-install
+          test -f expo-example-smoke/package.json

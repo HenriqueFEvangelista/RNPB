@@ -89,6 +89,8 @@ A resposta da API de conteúdo apresenta arquivos e diretórios; o RNPB pode exi
 - **Linguagem de exemplos Expo:** o diretório do exemplo pode usar JS ou TS. A seleção de idioma no RNPB não converte o exemplo; os metadados deixam o idioma **não verificado**.
 - **Resiliência:** erros HTTP/403/429 retornam um aviso; o serviço aplica cooldown em memória ao endpoint afetado, usando `Retry-After` ou `X-RateLimit-Reset` quando disponíveis, evitando novas chamadas enquanto o limite vigora. Não são tratados como sucesso. O usuário pode limpar o filtro para selecionar um preset local. Não há token incorporado.
 
+**Limitação adicional:** o `create-expo-app --example` também acessa o GitHub para obter o exemplo e pode falhar por HTTP 403 mesmo após o RNPB já ter listado o exemplo. A pausa do catálogo controla apenas as consultas realizadas pelo próprio RNPB, **não** as requisições internas do CLI. O teste externo `with-sqlite` foi movido para um workflow manual para que uma limitação de terceiros não bloqueie todas as PRs.
+
 **Estratégia do MVP:** consultar GitHub apenas sob demanda, preferir catálogo local curado, cache e validação da origem. **Não** tornar o GitHub dependência obrigatória da seleção básica.
 
 Documentação: [Limites da GitHub REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api).

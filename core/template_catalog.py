@@ -7,7 +7,7 @@ scaffold. Apenas exemplos da organização oficial Expo podem usar --example.
 from dataclasses import dataclass
 import re
 from threading import Lock
-from time import monotonic
+from time import monotonic, time
 
 import requests
 
@@ -125,11 +125,34 @@ def parse_github_references(payload: object) -> tuple[TemplateSpec, ...]:
 
 
 class TemplateCatalogService:
-    def __init__(self, http_get=None, clock=monotonic):
+    def __init__(self, http_get=None, clock=monotonic, wall_clock=time):
         self._get = http_get or requests.get
         self._clock = clock
+        self._wall_clock = wall_clock
         self._cache: dict[str, tuple[float, tuple[TemplateSpec, ...]]] = {}
+        self._cooldowns: dict[str, tuple[float, str]] = {}
         self._lock = Lock()
+
+    def _pause_after_limit(self, scope: str, error: requests.HTTPError) -> None:
+        """Respeita limites primários/ secundários sem repetir requisições negadas."""
+        response = error.response
+        if response is None:
+            return
+        status = response.status_code
+        remaining = response.headers.get("X-RateLimit-Remaining")
+        if status != 429 and not (status == 403 and remaining == "0"):
+            return
+        seconds = 60
+        retry = response.headers.get("Retry-After", "")
+        reset = response.headers.get("X-RateLimit-Reset", "")
+        if retry.isdecimal():
+            seconds = int(retry)
+        elif reset.isdecimal():
+            seconds = max(1, int(reset) - self._wall_clock())
+        seconds = max(1, min(int(seconds), 3600))
+        warning = _http_error_warning(error)
+        with self._lock:
+            self._cooldowns[scope] = (self._clock() + seconds, warning)
 
     def search(self, text: str, target: str, language: str) -> TemplateSearchResult:
         query = text.strip()
@@ -143,10 +166,18 @@ class TemplateCatalogService:
         # O catálogo Expo é listado inteiro pela API, portanto é compartilhado
         # entre buscas e linguagens e filtrado localmente.
         key = "expo/examples" if target == REACT_NATIVE else f"vite:{query.casefold()}"
+        scope = "contents" if target == REACT_NATIVE else "search"
         with self._lock:
             cached = self._cache.get(key)
             if cached and self._clock() - cached[0] < CACHE_SECONDS:
                 return TemplateSearchResult(self._filter(cached[1], query, target))
+            pause = self._cooldowns.get(scope)
+            if pause and self._clock() < pause[0]:
+                remaining = max(1, int(pause[0] - self._clock()))
+                return TemplateSearchResult(
+                    (), f"{pause[1]} Nova consulta liberada em cerca de {remaining} segundos. "
+                    "Os templates oficiais locais continuam disponíveis.",
+                )
 
         try:
             if target == REACT_NATIVE:
@@ -169,6 +200,7 @@ class TemplateCatalogService:
                 else parse_github_references(raw)
             )
         except requests.HTTPError as error:
+            self._pause_after_limit(scope, error)
             return TemplateSearchResult(
                 (), _http_error_warning(error)
                 + " Os templates oficiais locais continuam disponíveis.",

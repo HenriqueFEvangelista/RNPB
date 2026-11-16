@@ -160,6 +160,11 @@ class CreateView(QWidget):
         self.template_search.setObjectName("templateSearch")
         self.template_search.setPlaceholderText("Pesquisar exemplos Expo ou templates Vite…")
         template_layout.addWidget(self.template_search)
+        self.template_search_button = QPushButton("Pesquisar no GitHub")
+        self.template_search_button.setObjectName("templateSearchButton")
+        self.template_search_button.clicked.connect(self._dispatch_template_search)
+        self.template_search.returnPressed.connect(self._dispatch_template_search)
+        template_layout.addWidget(self.template_search_button)
         self.template_search_hint = QLabel()
         self.template_search_hint.setObjectName("muted")
         self.template_search_hint.setWordWrap(True)
@@ -230,6 +235,7 @@ class CreateView(QWidget):
         self.template_combo.currentIndexChanged.connect(self._clear_template_error)
         self._refresh_templates()
         self._update_template_search_hint()
+        self._update_template_search_button()
 
         controls = QHBoxLayout()
         self.back_button = QPushButton("Voltar")
@@ -259,12 +265,19 @@ class CreateView(QWidget):
 
         self._refresh_navigation()
 
+    def _update_template_search_button(self) -> None:
+        is_web = self.platform_combo.currentData() == REACT_WEB
+        self.template_search_button.setVisible(is_web)
+        self.template_search_button.setEnabled(
+            is_web and len(self.template_search.text().strip()) >= 2 and not self._running
+        )
+
     def _update_template_search_hint(self) -> None:
         if self.platform_combo.currentData() == REACT_WEB:
             self.template_search_hint.setText(
                 "Vite: experimente dashboard, tailwind, admin ou starter. "
-                "A busca no GitHub mostra somente referências comunitárias; "
-                "para gerar projetos, use um preset oficial local."
+                "Clique em Pesquisar no GitHub para procurar referências comunitárias "
+                "(não instaláveis). Para gerar projetos, use um preset oficial local."
             )
         else:
             self.template_search_hint.setText(
@@ -278,17 +291,29 @@ class CreateView(QWidget):
         self._update_template_search_hint()
         self._template_timer.stop()
         self._refresh_templates()
+        self._update_template_search_button()
         if len(self.template_search.text().strip()) >= 2:
-            self.template_source_label.setText("Pesquisando no GitHub…")
-            self._template_timer.start()
+            if self.platform_combo.currentData() == REACT_NATIVE:
+                self.template_source_label.setText("Pesquisando exemplos Expo…")
+                self._template_timer.start()
+            else:
+                self.template_source_label.setText(
+                    "Clique em Pesquisar no GitHub para consultar referências Vite."
+                )
 
     def _template_search_changed(self, *_args) -> None:
         self._template_timer.stop()
         self._online_templates = ()
         self._refresh_templates()
+        self._update_template_search_button()
         if len(self.template_search.text().strip()) >= 2:
-            self.template_source_label.setText("Pesquisando no GitHub…")
-            self._template_timer.start()
+            if self.platform_combo.currentData() == REACT_NATIVE:
+                self.template_source_label.setText("Pesquisando exemplos Expo…")
+                self._template_timer.start()
+            else:
+                self.template_source_label.setText(
+                    "Clique em Pesquisar no GitHub para consultar referências Vite."
+                )
         else:
             self.template_source_label.setText(
                 "Templates oficiais locais. Digite 2 caracteres para pesquisar online."
@@ -297,6 +322,7 @@ class CreateView(QWidget):
     def _dispatch_template_search(self) -> None:
         query = self.template_search.text().strip()
         if len(query) >= 2:
+            self.template_source_label.setText("Consultando GitHub…")
             self.template_search_requested.emit(
                 query, self.platform_combo.currentData(), self.language_combo.currentData()
             )
@@ -589,6 +615,7 @@ class CreateView(QWidget):
 
     def set_running(self, running: bool) -> None:
         self._running = running
+        self._update_template_search_button()
         self.steps.setEnabled(not running)
         self.back_button.setEnabled(not running)
         self.next_button.setEnabled(not running)

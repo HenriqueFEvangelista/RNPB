@@ -219,3 +219,46 @@ def test_erro_http_apresenta_status_sem_esconder_causa(status, headers, expected
     assert f"HTTP {status}" in result.warning
     assert expected.casefold() in result.warning.casefold()
     assert "locais" in result.warning
+
+
+def test_rate_limit_nao_repete_pesquisa_em_intervalo_bloqueado():
+    from core.template_catalog import GITHUB_REPOSITORY_SEARCH
+    now = [100.0]
+    calls = []
+    response = requests.Response()
+    response.status_code = 403
+    response.headers["X-RateLimit-Remaining"] = "0"
+    response.headers["X-RateLimit-Reset"] = "1200"
+
+    def blocked(url, **kwargs):
+        calls.append(url)
+        raise requests.HTTPError("403", response=response)
+
+    svc = TemplateCatalogService(blocked, clock=lambda: now[0], wall_clock=lambda: 1100)
+    first = svc.search("router", REACT_WEB, JAVASCRIPT)
+    assert "HTTP 403" in first.warning
+    second = svc.search("dashboard", REACT_WEB, JAVASCRIPT)
+    assert "Nova consulta liberada" in second.warning
+    assert calls == [GITHUB_REPOSITORY_SEARCH]
+    now[0] += 101
+    svc.search("dashboard", REACT_WEB, JAVASCRIPT)
+    assert len(calls) == 2
+
+
+def test_rate_limit_search_nao_impede_requisicao_contents_expo():
+    calls = []
+    response = requests.Response()
+    response.status_code = 429
+    response.headers["Retry-After"] = "60"
+
+    def fake_get(url, **kwargs):
+        calls.append(url)
+        if "search/repositories" in url:
+            raise requests.HTTPError("429", response=response)
+        return Response([official("with-router")])
+
+    svc = TemplateCatalogService(fake_get)
+    assert "HTTP 429" in svc.search("router", REACT_WEB, JAVASCRIPT).warning
+    result = svc.search("router", REACT_NATIVE, JAVASCRIPT)
+    assert [t.id for t in result.templates] == ["with-router"]
+    assert len(calls) == 2

@@ -160,3 +160,25 @@ def test_busca_vite_exibe_ajuda_de_referencias(qtbot):
     view.platform_combo.setCurrentIndex(view.platform_combo.findData(REACT_WEB))
     assert "dashboard" in view.template_search_hint.text()
     assert "somente referências" in view.template_search_hint.text()
+
+
+def test_vite_busca_acionada_apenas_por_botao(qtbot):
+    from PySide6.QtCore import QTimer
+    view = CreateView()
+    qtbot.addWidget(view)
+    view.platform_combo.setCurrentIndex(view.platform_combo.findData(REACT_WEB))
+    calls = []
+    view.template_search_requested.connect(lambda *args: calls.append(args))
+    view.template_search.setText("dashboard")
+    assert view.template_search_button.isEnabled()
+    assert not view._template_timer.isActive()
+    view.template_search_button.click()
+    assert calls == [("dashboard", REACT_WEB, JAVASCRIPT)]
+
+
+def test_expo_mantem_busca_automatica_com_debounce(qtbot):
+    view = CreateView()
+    qtbot.addWidget(view)
+    view.template_search.setText("router")
+    assert view._template_timer.isActive()
+    assert not view.template_search_button.isVisible()

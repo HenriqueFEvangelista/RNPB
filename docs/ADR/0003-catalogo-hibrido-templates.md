@@ -29,9 +29,11 @@ Adotar um **catálogo híbrido**:
 4. **Idioma e compatibilidade:** a linguagem de exemplos Expo é definida pelos
    arquivos do exemplo e **não pode ser garantida** pela opção JS/TS escolhida.
    Presets locais permanecem estritamente filtrados por idioma.
-5. **Desempenho:** workers `QRunnable` com sinais Qt, debounce de 650 ms,
-   timeout HTTP e cache de 600 s em memória. A busca não afeta o pipeline de
-   geração, instalação opcional de bibliotecas e abertura de IDE.
+5. **Desempenho:** workers `QRunnable` com sinais Qt, busca Expo com debounce de
+   650 ms e pesquisa Vite somente ao clicar em Pesquisar/pressionar Enter.
+   Timeout HTTP e cache de 600 s em memória. Se houver rate limit 403/429,
+   guardar uma pausa temporária por endpoint, respeitando cabeçalhos de reset.
+   A busca não afeta o pipeline de geração, instalação e abertura de IDE.
 6. **Segurança:** validar slug, URL, origem e estratégia dentro do núcleo.
    Nenhuma entrada externa pode fornecer nome de executável, flags arbitrárias
    ou script de instalação. Não inserir tokens do GitHub no código/executável.

@@ -82,12 +82,12 @@ A resposta da API de conteúdo apresenta arquivos e diretórios; o RNPB pode exi
 - Consultar cabeçalhos como `x-ratelimit-remaining` e `x-ratelimit-reset` e respeitar respostas HTTP `403`/`429`.
 - Nunca distribuir um token pessoal embutido no executável. Se autenticação individual for adicionada, requer decisão e implementação seguras específicas.
 
-**Implementação da issue #14:** `core/template_catalog.py` usa `requests` com `timeout=(4, 8)` e cache em memória de 600 segundos; `ui/template_catalog_worker.py` executa fora da thread gráfica e `ui/create_view.py` faz debounce de 650 ms. Os oito presets locais permanecem em `core/templates.py`. As APIs são consultadas somente após digitar ao menos dois caracteres.
+**Implementação da issue #14:** `core/template_catalog.py` usa `requests` com `timeout=(4, 8)` e cache em memória de 600 segundos; `ui/template_catalog_worker.py` executa fora da thread gráfica. O Expo usa debounce de 650 ms; Vite consulta a GitHub Search API **somente quando o usuário clica em Pesquisar no GitHub ou pressiona Enter** (texto mínimo de dois caracteres). Os oito presets locais permanecem em `core/templates.py`.
 
 - **Expo oficial:** `GET /repos/expo/examples/contents` lista diretórios `with-*` da raiz. Somente o ID sintaticamente validado e a URL canônica `expo/examples/tree/master/<id>` podem usar `--example` pelo CLI oficial.
 - **Vite/comunidade:** `GET /search/repositories?q=vite+react+template+...` retorna apenas referências, com descrição e link. Não há instalação/clonagem ou execução desses repositórios; o modelo marca `installable=False`.
 - **Linguagem de exemplos Expo:** o diretório do exemplo pode usar JS ou TS. A seleção de idioma no RNPB não converte o exemplo; os metadados deixam o idioma **não verificado**.
-- **Resiliência:** erros HTTP/403/429 retornam um aviso; não são tratados como sucesso. O usuário pode limpar o filtro para selecionar um preset local. Não há token incorporado.
+- **Resiliência:** erros HTTP/403/429 retornam um aviso; o serviço aplica cooldown em memória ao endpoint afetado, usando `Retry-After` ou `X-RateLimit-Reset` quando disponíveis, evitando novas chamadas enquanto o limite vigora. Não são tratados como sucesso. O usuário pode limpar o filtro para selecionar um preset local. Não há token incorporado.
 
 **Estratégia do MVP:** consultar GitHub apenas sob demanda, preferir catálogo local curado, cache e validação da origem. **Não** tornar o GitHub dependência obrigatória da seleção básica.
 

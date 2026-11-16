@@ -159,7 +159,7 @@ def test_busca_vite_exibe_ajuda_de_referencias(qtbot):
     assert "Expo:" in view.template_search_hint.text()
     view.platform_combo.setCurrentIndex(view.platform_combo.findData(REACT_WEB))
     assert "dashboard" in view.template_search_hint.text()
-    assert "somente referências" in view.template_search_hint.text()
+    assert "referências comunitárias" in view.template_search_hint.text()
 
 
 def test_vite_busca_acionada_apenas_por_botao(qtbot):
